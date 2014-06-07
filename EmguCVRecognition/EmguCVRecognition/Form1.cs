@@ -12,6 +12,7 @@ using Emgu.CV.UI;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
 
+
 namespace EmguCVRecognition
 {
     public partial class Form1 : Form
@@ -23,6 +24,9 @@ namespace EmguCVRecognition
 
         public Emgu.CV.UI.ImageBox  im1;
         public Emgu.CV.UI.ImageBox im2;
+        public MCvFont font;
+
+        List<ShapeColorObject> shapes;
 
         //----------------------------------------------------
 
@@ -35,9 +39,11 @@ namespace EmguCVRecognition
             this.MouseClick += new MouseEventHandler(myForm_MouseClick);
             im1 = imageBox1;
             im2 = imageBox2;
+            shapes = new List<ShapeColorObject>();
             //im1.SizeMode = PictureBoxSizeMode.StretchImage;
             //im2.SizeMode = PictureBoxSizeMode.StretchImage;
             listBox1.MultiColumn = true;
+            font = new MCvFont(Emgu.CV.CvEnum.FONT.CV_FONT_HERSHEY_COMPLEX, 0.6, 0.6);
         }
 
         void myForm_MouseClick(object sender, MouseEventArgs e)
@@ -86,9 +92,7 @@ namespace EmguCVRecognition
                         //Save Images
                         listBox1.Items.Add(loadedImageName);
                         LoadedImages.Add(loadedImageName, loadedImage);
-                        /*foreach (KeyValuePair<string, Emgu.CV.Image<Bgr, byte>> kvp in LoadedImages) {
-                            imgs.Add(kvp.Value.Convert<Hsv, byte>());
-                        }*/
+                        listBox1.SelectedIndex = 0;
                     }
 
                     catch (Exception ex)
@@ -126,11 +130,31 @@ namespace EmguCVRecognition
         private void imageBox1_Click(object sender, EventArgs e)
         {
             var mouseEventArgs = e as MouseEventArgs;
-            int x = (int)(mouseEventArgs.X / im1.ZoomScale);
-            int y = (int)(mouseEventArgs.Y / im1.ZoomScale);
+            int x = (int)(mouseEventArgs.X / im1.ZoomScale);//((float) im1.Width / (float) im1.Image.Size.Width));
+            int y = (int)(mouseEventArgs.Y / im1.ZoomScale);//((float) im1.Height / (float) im1.Image.Size.Height));
             if (mouseEventArgs != null) label1.Text = "X= " + x + " Y= " + y;
-            Hsv pcolor = LoadedImages[listBox1.SelectedItem.ToString()][x, y];
+            Emgu.CV.Image<Hsv, byte> inImg = LoadedImages[listBox1.SelectedItem.ToString()];
+            Hsv pcolor = inImg[y, x];
 
+            Emgu.CV.Image<Gray, byte> outImg;
+            double lowH = Math.Max(pcolor.Hue - 10, 0);
+            double lowS = Math.Max(pcolor.Satuation - 20, 0);
+            double lowV = Math.Max(pcolor.Value - 20, 0);
+            double highH = Math.Min(pcolor.Hue + 10, 179);
+            double highS = Math.Min(pcolor.Satuation + 20, 255);
+            double highV = Math.Min(pcolor.Value + 20, 255);
+
+            outImg = inImg.InRange(new Hsv(lowH, lowS, lowV), new Hsv(highH, highS, highV));
+            imageBox2.Image = outImg;
+            imageBox2.Update();
+
+            /*for (int i = -1; i < 2; i++)
+            {
+                for (int j = -1; j < 2; j++)
+                    inImg[y + i, x + j] = new Hsv(0,0,255);
+            }
+            im1.Image = inImg;
+            im1.Update();*/
         }
 
         private void imageBox2_Click(object sender, EventArgs e)
@@ -145,15 +169,82 @@ namespace EmguCVRecognition
 
         private void button3_Click(object sender, EventArgs e)
         {
-            int x = System.Windows.Forms.Cursor.Position.X;
-            int y = System.Windows.Forms.Cursor.Position.Y;
-            label1.Text = x + " " + y;
-            for (int i = 0; i < 100; i++)
+            if (im2.Image == null) return;
+            shapes.Clear();
+            Emgu.CV.Image<Hsv, byte> refImg = (Emgu.CV.Image<Hsv, byte>)im1.Image;
+            Emgu.CV.Image<Gray, byte> inImg = (Emgu.CV.Image<Gray, byte>)im2.Image;
+            Emgu.CV.Image<Hsv, byte> outImg = inImg.Convert<Hsv, byte>();
+
+            for (Contour<Point> contours = inImg.FindContours(); contours != null; contours = contours.HNext)
             {
-                LoadedImages[listBox1.SelectedItem.ToString()][i % 10, i / 10] = new Hsv(0, 0, 250);
+                Contour<Point> current = contours.ApproxPoly(contours.Perimeter * 0.008);
+                if (current.Area > 200)
+                {
+                    Point[] points = current.ToArray();
+
+                    int meanX = 0;
+                    int meanY = 0;
+
+                    foreach (Point p in points)
+                    {
+                        meanX += p.X;
+                        meanY += p.Y;
+                    }
+
+                    meanX /= current.Total;
+                    meanY /= current.Total;
+
+                    Hsv col;
+                    if (current.Total == 3)
+                    {
+                        col = new Hsv(0, 255, 220);
+                        shapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.triangle, refImg[meanY, meanX], meanX, meanY));
+                    }
+                    else if (current.Total == 4 && current.Convex)
+                    {
+                        col = new Hsv(45, 255, 220);
+                        shapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.rectangle, refImg[meanY, meanX], meanX, meanY));
+                    }
+                    else if (current.Total > 8 && current.Convex)
+                    {
+                        col = new Hsv(90, 255, 220);
+                        shapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.circle, refImg[meanY, meanX], meanX, meanY));
+                    }
+                    else
+                    {
+                        col = new Hsv(135, 255, 220);
+                        shapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.undefined, refImg[meanY, meanX], meanX, meanY));
+                    }
+
+                    for (int i = -1; i < 2; i++)
+                        for (int j = -1; j < 2; j++)
+                        {
+                            int x = Math.Max(Math.Min(meanX + i, outImg.Width - 1), 0);
+                            int y = Math.Max(Math.Min(meanY + j, outImg.Height - 1), 0);
+                            outImg[y, x] = new Hsv(0, 255, 255);
+                        }
+
+                    for (int i = 0; i < current.Total - 1; i++)
+                    {
+                        LineSegment2D line = new LineSegment2D(points[i], points[i + 1]);
+                        outImg.Draw(line, col, 2);
+                    }
+                    LineSegment2D line2 = new LineSegment2D(points[current.Total - 1], points[0]);
+                    outImg.Draw(line2, col, 2);
+
+                    string data = "";
+                    foreach (ShapeColorObject s in shapes)
+                    {
+                        data += s.toString() + "\n";
+                        outImg.Draw(s.toString(), ref font, s.pos, new Hsv(0, 255, 255));
+                    }
+                    label2.Text = data;
+
+
+                    im2.Image = outImg;
+                    im2.Update();
+                }
             }
-            
-            im1.Update();
         }
 
     }
