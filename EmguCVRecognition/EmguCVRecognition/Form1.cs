@@ -18,7 +18,8 @@ namespace EmguCVRecognition
     {
         // Variables
         bool imagesloaded = false;
-        public Dictionary<string, Emgu.CV.Image<Bgr,Byte>> LoadedImages = new Dictionary<string,Emgu.CV.Image<Bgr,Byte>>();
+        public Dictionary<string, Emgu.CV.Image<Hsv,Byte>> LoadedImages = new Dictionary<string,Emgu.CV.Image<Hsv,Byte>>();
+        public List<Emgu.CV.Image<Hsv, byte>> imgs = new List<Emgu.CV.Image<Hsv, byte>>();
 
         public Emgu.CV.UI.ImageBox  im1;
         public Emgu.CV.UI.ImageBox im2;
@@ -34,8 +35,8 @@ namespace EmguCVRecognition
             this.MouseClick += new MouseEventHandler(myForm_MouseClick);
             im1 = imageBox1;
             im2 = imageBox2;
-            im1.SizeMode = PictureBoxSizeMode.StretchImage;
-            im2.SizeMode = PictureBoxSizeMode.StretchImage;
+            //im1.SizeMode = PictureBoxSizeMode.StretchImage;
+            //im2.SizeMode = PictureBoxSizeMode.StretchImage;
             listBox1.MultiColumn = true;
         }
 
@@ -80,11 +81,14 @@ namespace EmguCVRecognition
                         //Convert Images to Emgu Format
                         Image tempImage = Image.FromFile(file);
                         Bitmap tempBitmap = new Bitmap(tempImage);
-                        Emgu.CV.Image<Bgr,Byte> loadedImage = new Emgu.CV.Image<Bgr, Byte>(tempBitmap);
+                        Emgu.CV.Image<Hsv,Byte> loadedImage = new Emgu.CV.Image<Hsv, Byte>(tempBitmap);
                         string loadedImageName = "Image:"+currentImage;
                         //Save Images
                         listBox1.Items.Add(loadedImageName);
                         LoadedImages.Add(loadedImageName, loadedImage);
+                        /*foreach (KeyValuePair<string, Emgu.CV.Image<Bgr, byte>> kvp in LoadedImages) {
+                            imgs.Add(kvp.Value.Convert<Hsv, byte>());
+                        }*/
                     }
 
                     catch (Exception ex)
@@ -117,10 +121,16 @@ namespace EmguCVRecognition
        }
 
    
+        
 
         private void imageBox1_Click(object sender, EventArgs e)
         {
-            
+            var mouseEventArgs = e as MouseEventArgs;
+            int x = (int)(mouseEventArgs.X / im1.ZoomScale);
+            int y = (int)(mouseEventArgs.Y / im1.ZoomScale);
+            if (mouseEventArgs != null) label1.Text = "X= " + x + " Y= " + y;
+            Hsv pcolor = LoadedImages[listBox1.SelectedItem.ToString()][x, y];
+
         }
 
         private void imageBox2_Click(object sender, EventArgs e)
@@ -133,6 +143,18 @@ namespace EmguCVRecognition
             im1.Image = LoadedImages[listBox1.SelectedItem.ToString()];
         }
 
+        private void button3_Click(object sender, EventArgs e)
+        {
+            int x = System.Windows.Forms.Cursor.Position.X;
+            int y = System.Windows.Forms.Cursor.Position.Y;
+            label1.Text = x + " " + y;
+            for (int i = 0; i < 100; i++)
+            {
+                LoadedImages[listBox1.SelectedItem.ToString()][i % 10, i / 10] = new Hsv(0, 0, 250);
+            }
+            
+            im1.Update();
+        }
 
     }
 }
