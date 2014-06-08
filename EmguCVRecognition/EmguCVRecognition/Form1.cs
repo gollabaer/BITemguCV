@@ -119,11 +119,10 @@ namespace EmguCVRecognition
            Capture capture = new Capture(); //create a camera capture
            Emgu.CV.Image<Bgr, Byte> img = capture.QueryFrame();
            this.im2.Image = img; //draw the image obtained from camera
-               
+
+
        }
 
-
-    
 
         private void imageBox1_Click(object sender, EventArgs e)
         {
@@ -166,6 +165,46 @@ namespace EmguCVRecognition
             Emgu.CV.Image<Gray, byte> inImg = (Emgu.CV.Image<Gray, byte>)im2.Image;
             Emgu.CV.Image<Hsv, byte> outImg = inImg.Convert<Hsv, byte>();
 
+            List<LineSegment2D> linesegments = new List<LineSegment2D>();
+            List<Hsv> linecolors = new List<Hsv>();
+
+            shapes.AddRange(findShapesinGrayImg(inImg, refImg, ref linesegments,ref linecolors));
+
+            for (int i = 0; i < linesegments.Count; i++)
+            {
+                outImg.Draw(linesegments.ElementAt(i), linecolors.ElementAt(i), 2);
+            }
+           
+            
+
+            string data = "";
+            foreach (ShapeColorObject s in shapes)
+            {
+                data += s.toString() + "\n";
+                outImg.Draw(s.toString(), ref font, s.pos, new Hsv(0, 255, 255));
+                outImg.Draw(new Cross2DF(new PointF((float)s.pos.X, (float)s.pos.Y), (float)5.0,(float) 5.0), new Hsv(0, 200, 200), 2);
+            }
+            label2.Text = data;
+            im2.Image = outImg;
+            im2.Update();
+        }
+
+
+
+        /// <summary>
+        /// Returns a List of Shapes found in the gray Image and returns Linesegments and color of shape
+        /// </summary>
+        /// <param name="inImg">Gray Image</param>
+        /// <param name="refImg">Color Image for shapecolor</param>
+        /// <param name="lines">outputarray for lines</param>
+        /// <param name="colors">outputarry for linecolors</param>
+        /// <returns></returns>
+        public static  List<ShapeColorObject> findShapesinGrayImg(Emgu.CV.Image<Gray, Byte> inImg, Emgu.CV.Image<Hsv, Byte> refImg, ref List<LineSegment2D> lines, ref List<Hsv> colors) {
+
+            if (inImg == null || refImg == null)  return null; 
+
+            List<ShapeColorObject> funkshapes = new List<ShapeColorObject>();
+
             for (Contour<Point> contours = inImg.FindContours(); contours != null; contours = contours.HNext)
             {
                 Contour<Point> current = contours.ApproxPoly(contours.Perimeter * 0.008);
@@ -189,56 +228,101 @@ namespace EmguCVRecognition
                     if (current.Total == 3)
                     {
                         col = new Hsv(0, 255, 220);
-                        shapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.triangle, refImg[meanY, meanX], meanX, meanY));
+                        funkshapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.triangle, refImg[meanY, meanX], meanX, meanY));
                     }
                     else if (current.Total == 4 && current.Convex)
                     {
                         col = new Hsv(45, 255, 220);
-                        shapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.rectangle, refImg[meanY, meanX], meanX, meanY));
+                        funkshapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.rectangle, refImg[meanY, meanX], meanX, meanY));
                     }
                     else if (current.Total > 8 && current.Convex)
                     {
                         col = new Hsv(90, 255, 220);
-                        shapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.circle, refImg[meanY, meanX], meanX, meanY));
+                        funkshapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.circle, refImg[meanY, meanX], meanX, meanY));
                     }
                     else
                     {
                         col = new Hsv(135, 255, 220);
-                        shapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.undefined, refImg[meanY, meanX], meanX, meanY));
+                        funkshapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.undefined, refImg[meanY, meanX], meanX, meanY));
                     }
 
-                    for (int i = -1; i < 2; i++)
-                        for (int j = -1; j < 2; j++)
+                    if (lines != null && colors != null)
+                    {
+                        for (int i = 0; i < current.Total - 1; i++)
                         {
-                            int x = Math.Max(Math.Min(meanX + i, outImg.Width - 1), 0);
-                            int y = Math.Max(Math.Min(meanY + j, outImg.Height - 1), 0);
-                            outImg[y, x] = new Hsv(0, 255, 255);
+                            lines.Add(new LineSegment2D(points[i], points[i + 1]));
+                            colors.Add(col);
+
                         }
-
-                    for (int i = 0; i < current.Total - 1; i++)
-                    {
-                        LineSegment2D line = new LineSegment2D(points[i], points[i + 1]);
-                        outImg.Draw(line, col, 2);
+                        lines.Add(new LineSegment2D(points[current.Total - 1], points[0]));
+                        colors.Add(col);
                     }
-                    LineSegment2D line2 = new LineSegment2D(points[current.Total - 1], points[0]);
-                    outImg.Draw(line2, col, 2);
+                }//ende if(200>area)
+            }//ende for(contours....)
 
-
-                    string data = "";
-                    foreach (ShapeColorObject s in shapes)
-                    {
-                        data += s.toString() + "\n";
-                        outImg.Draw(s.toString(), ref font, s.pos, new Hsv(0, 255, 255));
-                    }
-                    label2.Text = data;
-
-
-                    im2.Image = outImg;
-                    im2.Update();
-                }
-            }
+            return funkshapes;
         }
 
+        /// <summary>
+        /// Returns a List of Shapes found in the Gray Image
+        /// </summary>
+        /// <param name="inImg">Gray Iamge</param>
+        /// <param name="refImg">color Image for shapecolor</param>
+        /// <returns></returns>
+        public static List<ShapeColorObject> findShapesinGrayImg(Emgu.CV.Image<Gray, Byte> inImg, Emgu.CV.Image<Hsv, Byte> refImg)
+        {
+
+            if (inImg == null || refImg == null) return null;
+
+            List<ShapeColorObject> funkshapes = new List<ShapeColorObject>();
+
+            for (Contour<Point> contours = inImg.FindContours(); contours != null; contours = contours.HNext)
+            {
+                Contour<Point> current = contours.ApproxPoly(contours.Perimeter * 0.008);
+                if (current.Area > 200)
+                {
+                    Point[] points = current.ToArray();
+
+                    int meanX = 0;
+                    int meanY = 0;
+
+                    foreach (Point p in points)
+                    {
+                        meanX += p.X;
+                        meanY += p.Y;
+                    }
+
+                    meanX /= current.Total;
+                    meanY /= current.Total;
+
+                    Hsv col;
+                    if (current.Total == 3)
+                    {
+                        col = new Hsv(0, 255, 220);
+                        funkshapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.triangle, refImg[meanY, meanX], meanX, meanY));
+                    }
+                    else if (current.Total == 4 && current.Convex)
+                    {
+                        col = new Hsv(45, 255, 220);
+                        funkshapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.rectangle, refImg[meanY, meanX], meanX, meanY));
+                    }
+                    else if (current.Total > 8 && current.Convex)
+                    {
+                        col = new Hsv(90, 255, 220);
+                        funkshapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.circle, refImg[meanY, meanX], meanX, meanY));
+                    }
+                    else
+                    {
+                        col = new Hsv(135, 255, 220);
+                        funkshapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.undefined, refImg[meanY, meanX], meanX, meanY));
+                    }
+
+                    
+                }//ende if(200>area)
+            }//ende for(contours....)
+
+            return funkshapes;
+        }
 
         /// <summary>
         /// Nimmt HSV Bild, vergleicht mit eingegebener Farbe und gibt binaeres Graubild zurueck

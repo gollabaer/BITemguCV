@@ -7,7 +7,7 @@ using System.Drawing;
 
 namespace EmguCVRecognition
 {
-    class ShapeColorObject
+  public  class ShapeColorObject
     {
         double area;
         shape type;
