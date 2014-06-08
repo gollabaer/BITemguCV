@@ -27,6 +27,7 @@ namespace EmguCVRecognition
         public MCvFont font;
 
         List<ShapeColorObject> shapes;
+        List<ShapeColorObject> chosenshapes;
 
         //----------------------------------------------------
 
@@ -40,6 +41,7 @@ namespace EmguCVRecognition
             im1 = imageBox1;
             im2 = imageBox2;
             shapes = new List<ShapeColorObject>();
+            chosenshapes = new List<ShapeColorObject>();
             im1.SizeMode = PictureBoxSizeMode.Zoom;
             im2.SizeMode = PictureBoxSizeMode.Zoom;
             listBox1.MultiColumn = true;
@@ -57,9 +59,11 @@ namespace EmguCVRecognition
 
         private void button1_Click(object sender, EventArgs e)
         {
-            //if (imagesloaded) {
-            //    MessageBox.Show("Images can only be loaded once!");
-            //    return; }
+            if (imagesloaded)
+            {
+                MessageBox.Show("Images can only be loaded once!");
+                return;
+            }
 
             //Initialize openFiledialogue
             OpenFileDialog openFileDialog1 = new OpenFileDialog();
@@ -134,16 +138,63 @@ namespace EmguCVRecognition
             boxHeight = im1.Size.Height;
 
             Point mouse = TranslateZoomMousePosition(mouseEventArgs.X, mouseEventArgs.Y, imWidth, imHeight, boxWidth, boxHeight);
-            int x = mouse.X;//(int)(mouseEventArgs.X / im1.ZoomScale);//((float) im1.Width / (float) im1.Image.Size.Width));
-            int y = mouse.Y;//(int)(mouseEventArgs.Y / im1.ZoomScale);//((float) im1.Height / (float) im1.Image.Size.Height));
+            int x = mouse.X;//(int)(mouseEventArgs.X / im1.ZoomScale);
+            int y = mouse.Y;//(int)(mouseEventArgs.Y / im1.ZoomScale);
             if (mouseEventArgs != null) label1.Text = "X= " + x + " Y= " + y;
-            Emgu.CV.Image<Hsv, byte> inImg = LoadedImages[listBox1.SelectedItem.ToString()];
-            Hsv pcolor = inImg[y, x];
+            Emgu.CV.Image<Hsv, byte> original = LoadedImages[listBox1.SelectedItem.ToString()];
+            Hsv pcolor = original[y, x];
 
-            Emgu.CV.Image<Gray, byte> outImg;
-            outImg = thresholdHSVtoGray(inImg, pcolor, 10, 20, 20);
-            imageBox2.Image = outImg;
+            Emgu.CV.Image<Gray, byte> threshedimage;
+            threshedimage = thresholdHSVtoGray(original, pcolor, 10, 20, 20);
+            imageBox2.Image = threshedimage;
             imageBox2.Update();
+
+
+            ///-----CODE VON BUTTON3CLICK
+            ///
+
+            Point dummy = new Point(x, y);
+
+            shapes.Clear();
+            Emgu.CV.Image<Hsv, byte> refImg = (Emgu.CV.Image<Hsv, byte>)im1.Image;
+            Emgu.CV.Image<Gray, byte> inImg = (Emgu.CV.Image<Gray, byte>)im2.Image;
+            Emgu.CV.Image<Hsv, byte> outImg = inImg.Convert<Hsv, byte>();
+
+            shapes.AddRange(findShapesinGrayImg(inImg, refImg));
+
+            ShapeColorObject temp = null;
+            int dist = 0;
+
+            foreach (ShapeColorObject shp in shapes)
+            {
+                int d = (shp.pos.X - dummy.X) * (shp.pos.X - dummy.X) + (shp.pos.Y - dummy.Y) * (shp.pos.Y - dummy.Y);
+                if (temp == null || d < dist)
+                {
+                    temp = shp;
+                    dist = d;
+                }
+            }
+
+            chosenshapes.Add(temp);
+
+            foreach (ShapeColorObject shp in chosenshapes)
+            {
+                shp.drawOnImg(ref outImg);
+            }
+
+            string data = "";
+            foreach (ShapeColorObject s in chosenshapes)
+            {
+                data += s.toString() + "\n";
+                outImg.Draw(s.toString(), ref font, s.pos, new Hsv(0, 255, 255));
+                outImg.Draw(new Cross2DF(new PointF((float)s.pos.X, (float)s.pos.Y), (float)5.0, (float)5.0), new Hsv(0, 200, 200), 2);
+            }
+            label2.Text = data;
+            im2.Image = outImg;
+            im2.Update();
+
+            ///-CODE VON BUTTON3--ENDE----
+
         }
 
         private void imageBox2_Click(object sender, EventArgs e)
@@ -158,35 +209,8 @@ namespace EmguCVRecognition
 
         private void button3_Click(object sender, EventArgs e)
         {
-            if (im2.Image == null) return;
-
-            shapes.Clear();
-            Emgu.CV.Image<Hsv, byte> refImg = (Emgu.CV.Image<Hsv, byte>)im1.Image;
-            Emgu.CV.Image<Gray, byte> inImg = (Emgu.CV.Image<Gray, byte>)im2.Image;
-            Emgu.CV.Image<Hsv, byte> outImg = inImg.Convert<Hsv, byte>();
-
-            List<LineSegment2D> linesegments = new List<LineSegment2D>();
-            List<Hsv> linecolors = new List<Hsv>();
-
-            shapes.AddRange(findShapesinGrayImg(inImg, refImg, ref linesegments,ref linecolors));
-
-            for (int i = 0; i < linesegments.Count; i++)
-            {
-                outImg.Draw(linesegments.ElementAt(i), linecolors.ElementAt(i), 2);
-            }
-           
             
 
-            string data = "";
-            foreach (ShapeColorObject s in shapes)
-            {
-                data += s.toString() + "\n";
-                outImg.Draw(s.toString(), ref font, s.pos, new Hsv(0, 255, 255));
-                outImg.Draw(new Cross2DF(new PointF((float)s.pos.X, (float)s.pos.Y), (float)5.0,(float) 5.0), new Hsv(0, 200, 200), 2);
-            }
-            label2.Text = data;
-            im2.Image = outImg;
-            im2.Update();
         }
 
 
@@ -199,7 +223,7 @@ namespace EmguCVRecognition
         /// <param name="lines">outputarray for lines</param>
         /// <param name="colors">outputarry for linecolors</param>
         /// <returns></returns>
-        public static  List<ShapeColorObject> findShapesinGrayImg(Emgu.CV.Image<Gray, Byte> inImg, Emgu.CV.Image<Hsv, Byte> refImg, ref List<LineSegment2D> lines, ref List<Hsv> colors) {
+        public static  List<ShapeColorObject> findShapesinGrayImg(Emgu.CV.Image<Gray, Byte> inImg, Emgu.CV.Image<Hsv, Byte> refImg) {
 
             if (inImg == null || refImg == null)  return null; 
 
@@ -223,101 +247,42 @@ namespace EmguCVRecognition
 
                     meanX /= current.Total;
                     meanY /= current.Total;
-
+                    ShapeColorObject newObj; 
                     Hsv col;
                     if (current.Total == 3)
                     {
                         col = new Hsv(0, 255, 220);
-                        funkshapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.triangle, refImg[meanY, meanX], meanX, meanY));
+                       newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.triangle, refImg[meanY, meanX], meanX, meanY);
+                        funkshapes.Add(newObj);
                     }
                     else if (current.Total == 4 && current.Convex)
                     {
                         col = new Hsv(45, 255, 220);
-                        funkshapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.rectangle, refImg[meanY, meanX], meanX, meanY));
+                        newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.rectangle, refImg[meanY, meanX], meanX, meanY);
+                        funkshapes.Add(newObj);
                     }
                     else if (current.Total > 8 && current.Convex)
                     {
                         col = new Hsv(90, 255, 220);
-                        funkshapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.circle, refImg[meanY, meanX], meanX, meanY));
+                        newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.circle, refImg[meanY, meanX], meanX, meanY);
+                        funkshapes.Add(newObj);
                     }
                     else
                     {
                         col = new Hsv(135, 255, 220);
-                        funkshapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.undefined, refImg[meanY, meanX], meanX, meanY));
+                        newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.undefined, refImg[meanY, meanX], meanX, meanY);
+                        funkshapes.Add(newObj);
                     }
 
-                    if (lines != null && colors != null)
-                    {
-                        for (int i = 0; i < current.Total - 1; i++)
-                        {
-                            lines.Add(new LineSegment2D(points[i], points[i + 1]));
-                            colors.Add(col);
+                   for (int i = 0; i < current.Total - 1; i++)
+                   {
+                         newObj.lineSegments.Add(new LineSegment2D(points[i], points[i + 1]));
+                            
 
-                        }
-                        lines.Add(new LineSegment2D(points[current.Total - 1], points[0]));
-                        colors.Add(col);
-                    }
-                }//ende if(200>area)
-            }//ende for(contours....)
-
-            return funkshapes;
-        }
-
-        /// <summary>
-        /// Returns a List of Shapes found in the Gray Image
-        /// </summary>
-        /// <param name="inImg">Gray Iamge</param>
-        /// <param name="refImg">color Image for shapecolor</param>
-        /// <returns></returns>
-        public static List<ShapeColorObject> findShapesinGrayImg(Emgu.CV.Image<Gray, Byte> inImg, Emgu.CV.Image<Hsv, Byte> refImg)
-        {
-
-            if (inImg == null || refImg == null) return null;
-
-            List<ShapeColorObject> funkshapes = new List<ShapeColorObject>();
-
-            for (Contour<Point> contours = inImg.FindContours(); contours != null; contours = contours.HNext)
-            {
-                Contour<Point> current = contours.ApproxPoly(contours.Perimeter * 0.008);
-                if (current.Area > 200)
-                {
-                    Point[] points = current.ToArray();
-
-                    int meanX = 0;
-                    int meanY = 0;
-
-                    foreach (Point p in points)
-                    {
-                        meanX += p.X;
-                        meanY += p.Y;
-                    }
-
-                    meanX /= current.Total;
-                    meanY /= current.Total;
-
-                    Hsv col;
-                    if (current.Total == 3)
-                    {
-                        col = new Hsv(0, 255, 220);
-                        funkshapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.triangle, refImg[meanY, meanX], meanX, meanY));
-                    }
-                    else if (current.Total == 4 && current.Convex)
-                    {
-                        col = new Hsv(45, 255, 220);
-                        funkshapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.rectangle, refImg[meanY, meanX], meanX, meanY));
-                    }
-                    else if (current.Total > 8 && current.Convex)
-                    {
-                        col = new Hsv(90, 255, 220);
-                        funkshapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.circle, refImg[meanY, meanX], meanX, meanY));
-                    }
-                    else
-                    {
-                        col = new Hsv(135, 255, 220);
-                        funkshapes.Add(new ShapeColorObject(current.Area, ShapeColorObject.shape.undefined, refImg[meanY, meanX], meanX, meanY));
-                    }
-
-                    
+                   }
+                   newObj.lineSegments.Add(new LineSegment2D(points[current.Total - 1], points[0]));
+                        
+                  
                 }//ende if(200>area)
             }//ende for(contours....)
 
@@ -356,7 +321,7 @@ namespace EmguCVRecognition
         /// <param name="boxWidth">imageboxbreite</param>
         /// <param name="boxHeight">imageboxhoehe</param>
         /// <returns></returns>
-        protected Point TranslateZoomMousePosition(int x, int y, int imWidth, int imHeight, int boxWidth,int boxHeight)
+        private Point TranslateZoomMousePosition(int x, int y, int imWidth, int imHeight, int boxWidth,int boxHeight)
         {
             
             float imageAspect = (float)imWidth / imHeight;
@@ -395,5 +360,23 @@ namespace EmguCVRecognition
 
             return new Point((int)newX, (int)newY);
         }
+
+
+        private List<ShapeColorObject> findSimilarShapeinPicture(ShapeColorObject template, Image<Hsv, byte> image) {
+            
+            Image<Gray, Byte> threshhImage = thresholdHSVtoGray(image, template.getColor(), 10, 20, 20);
+            List<ShapeColorObject> samecoloredshapes = findShapesinGrayImg(threshhImage, image);
+            List<ShapeColorObject> similar = new List<ShapeColorObject>();
+
+            for (int i = 0; i < samecoloredshapes.Count ; i++)
+            {
+                if (template.compare(samecoloredshapes.ElementAt(i), 5, 5))
+                    similar.Add(samecoloredshapes.ElementAt(i));
+            }
+            return samecoloredshapes;
+        }
+
+
+
     }
 }

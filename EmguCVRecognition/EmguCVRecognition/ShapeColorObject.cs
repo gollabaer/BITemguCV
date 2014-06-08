@@ -4,22 +4,24 @@ using System.Linq;
 using System.Text;
 using Emgu.CV.Structure;
 using System.Drawing;
+using Emgu.CV;
 
 namespace EmguCVRecognition
 {
   public  class ShapeColorObject
     {
+        public List<LineSegment2D> lineSegments; 
         double area;
-        shape type;
+        public shape type;
         public enum shape
         {
-            triangle,
-            rectangle,
-            circle,
-            undefined
+            triangle = 0,
+            rectangle = 45,
+            circle = 90,
+            undefined =145
         };
 
-        Hsv color;
+        private Hsv color;
         int x;
         int y;
 
@@ -35,6 +37,7 @@ namespace EmguCVRecognition
             this.color = color;
             this.x = x;
             this.y = y;
+            lineSegments = new List<LineSegment2D>();
         }
 
         public bool compare(ShapeColorObject shape2, int cTolerance, int aTolerance)
@@ -79,5 +82,12 @@ namespace EmguCVRecognition
             s += " @(" + x + "; " + y + "): " + color.Hue;
             return s;
         }
+        
+        public void drawOnImg(ref Emgu.CV.Image<Hsv,byte> img){
+            foreach(LineSegment2D segment in lineSegments)
+                img.Draw(segment,new Hsv((int)type,240,240), 2);
+        }
+
+        public Hsv getColor() { return color; }
     }
 }
