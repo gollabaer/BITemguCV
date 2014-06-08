@@ -17,9 +17,11 @@ namespace EmguCVRecognition
 {
     public partial class Form1 : Form
     {
-        // Variables
+        //-Variables------------------------------------------
         bool imagesloaded = false;
         public Dictionary<string, Emgu.CV.Image<Hsv,Byte>> LoadedImages = new Dictionary<string,Emgu.CV.Image<Hsv,Byte>>();
+        public Dictionary<string, Emgu.CV.Image<Hsv, Byte>> workImages = new Dictionary<string, Image<Hsv, byte>>();
+       
         public List<Emgu.CV.Image<Hsv, byte>> imgs = new List<Emgu.CV.Image<Hsv, byte>>();
 
         public Emgu.CV.UI.ImageBox  im1;
@@ -54,7 +56,7 @@ namespace EmguCVRecognition
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            
+          
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -65,18 +67,18 @@ namespace EmguCVRecognition
                 return;
             }
 
-            //Initialize openFiledialogue
+            //--Initialize openFiledialogue---
             OpenFileDialog openFileDialog1 = new OpenFileDialog();
             openFileDialog1.Filter = "Images (*.BMP;*.JPG;*.GIF;*.PNG)|*.BMP;*.JPG;*.GIF;*.PNG";
             openFileDialog1.FilterIndex = 1;
             openFileDialog1.RestoreDirectory = true;
             openFileDialog1.Title = "Image Selection";
             openFileDialog1.Multiselect = true;
-            //----------------------------
+            //--------------------------------
 
             DialogResult dialogresult = openFileDialog1.ShowDialog();
 
-            //Save Images in Dictionary and display in ListBox
+            //---Save Images in Dictionary and display in ListBox----
             if (dialogresult == System.Windows.Forms.DialogResult.OK)
             {
                 int currentImage = 0;
@@ -120,40 +122,34 @@ namespace EmguCVRecognition
        private void button2_Click(object sender, EventArgs e)
        {
 
-           Capture capture = new Capture(); //create a camera capture
-           Emgu.CV.Image<Bgr, Byte> img = capture.QueryFrame();
-           this.im2.Image = img; //draw the image obtained from camera
-
 
        }
 
 
         private void imageBox1_Click(object sender, EventArgs e)
         {
+            //--Get Mouseposition in Pixelcoordinates--------
             var mouseEventArgs = e as MouseEventArgs;
             int imWidth, imHeight, boxWidth, boxHeight;
             imWidth = im1.Image.Size.Width;
             imHeight = im1.Image.Size.Height;
             boxWidth = im1.Size.Width;
             boxHeight = im1.Size.Height;
-
             Point mouse = TranslateZoomMousePosition(mouseEventArgs.X, mouseEventArgs.Y, imWidth, imHeight, boxWidth, boxHeight);
             int x = mouse.X;//(int)(mouseEventArgs.X / im1.ZoomScale);
             int y = mouse.Y;//(int)(mouseEventArgs.Y / im1.ZoomScale);
-            if (mouseEventArgs != null) label1.Text = "X= " + x + " Y= " + y;
+
+            
             Emgu.CV.Image<Hsv, byte> original = LoadedImages[listBox1.SelectedItem.ToString()];
             Hsv pcolor = original[y, x];
-
+            if (mouseEventArgs != null) label1.Text = "X= " + x + " Y= " + y+ " Color=" + pcolor.Hue + " ;"+ + pcolor.Satuation + " ;"+ pcolor.Value ;
             Emgu.CV.Image<Gray, byte> threshedimage;
             threshedimage = thresholdHSVtoGray(original, pcolor, 10, 20, 20);
             imageBox2.Image = threshedimage;
-            imageBox2.Update();
 
-
+            //
             ///-----CODE VON BUTTON3CLICK
-            ///
-
-            Point dummy = new Point(x, y);
+            //
 
             shapes.Clear();
             Emgu.CV.Image<Hsv, byte> refImg = (Emgu.CV.Image<Hsv, byte>)im1.Image;
@@ -162,21 +158,22 @@ namespace EmguCVRecognition
 
             shapes.AddRange(findShapesinGrayImg(inImg, refImg));
 
+            //--Find closest shape---------
             ShapeColorObject temp = null;
             int dist = 0;
-
             foreach (ShapeColorObject shp in shapes)
             {
-                int d = (shp.pos.X - dummy.X) * (shp.pos.X - dummy.X) + (shp.pos.Y - dummy.Y) * (shp.pos.Y - dummy.Y);
+                int d = (shp.pos.X - mouse.X) * (shp.pos.X - mouse.X) + (shp.pos.Y - mouse.Y) * (shp.pos.Y - mouse.Y);
                 if (temp == null || d < dist)
                 {
                     temp = shp;
                     dist = d;
                 }
             }
-
+            if(temp!=null)
             chosenshapes.Add(temp);
 
+            #region DrawImages
             foreach (ShapeColorObject shp in chosenshapes)
             {
                 shp.drawOnImg(ref outImg);
@@ -192,9 +189,10 @@ namespace EmguCVRecognition
             label2.Text = data;
             im2.Image = outImg;
             im2.Update();
-
+            #endregion
+            //
             ///-CODE VON BUTTON3--ENDE----
-
+            //
         }
 
         private void imageBox2_Click(object sender, EventArgs e)
@@ -210,7 +208,6 @@ namespace EmguCVRecognition
         private void button3_Click(object sender, EventArgs e)
         {
             
-
         }
 
 
@@ -284,7 +281,7 @@ namespace EmguCVRecognition
                         
                   
                 }//ende if(200>area)
-            }//ende for(contours....)
+            }//ende von for(contours....)
 
             return funkshapes;
         }
@@ -361,7 +358,12 @@ namespace EmguCVRecognition
             return new Point((int)newX, (int)newY);
         }
 
-
+        /// <summary>
+        /// Muss auf jeden fall noch mal gemacht werden
+        /// </summary>
+        /// <param name="template"></param>
+        /// <param name="image"></param>
+        /// <returns></returns>
         private List<ShapeColorObject> findSimilarShapeinPicture(ShapeColorObject template, Image<Hsv, byte> image) {
             
             Image<Gray, Byte> threshhImage = thresholdHSVtoGray(image, template.getColor(), 10, 20, 20);

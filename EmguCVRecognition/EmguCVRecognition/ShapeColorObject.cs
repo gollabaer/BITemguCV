@@ -10,6 +10,7 @@ namespace EmguCVRecognition
 {
   public  class ShapeColorObject
     {
+        public string image;
         public List<LineSegment2D> lineSegments; 
         double area;
         public shape type;
