@@ -40,10 +40,10 @@ namespace EmguCVRecognition
             im1 = imageBox1;
             im2 = imageBox2;
             shapes = new List<ShapeColorObject>();
-            //im1.SizeMode = PictureBoxSizeMode.StretchImage;
-            //im2.SizeMode = PictureBoxSizeMode.StretchImage;
+            im1.SizeMode = PictureBoxSizeMode.Zoom;
+            im2.SizeMode = PictureBoxSizeMode.Zoom;
             listBox1.MultiColumn = true;
-            font = new MCvFont(Emgu.CV.CvEnum.FONT.CV_FONT_HERSHEY_COMPLEX, 0.6, 0.6);
+            font = new MCvFont(Emgu.CV.CvEnum.FONT.CV_FONT_HERSHEY_PLAIN,1, 1);
         }
 
         void myForm_MouseClick(object sender, MouseEventArgs e)
@@ -57,13 +57,12 @@ namespace EmguCVRecognition
 
         private void button1_Click(object sender, EventArgs e)
         {
-            if (imagesloaded) {
-                MessageBox.Show("Images can only be loaded once!");
-                return; }
+            //if (imagesloaded) {
+            //    MessageBox.Show("Images can only be loaded once!");
+            //    return; }
 
             //Initialize openFiledialogue
             OpenFileDialog openFileDialog1 = new OpenFileDialog();
-           // openFileDialog1.InitialDirectory = "c:\\";
             openFileDialog1.Filter = "Images (*.BMP;*.JPG;*.GIF;*.PNG)|*.BMP;*.JPG;*.GIF;*.PNG";
             openFileDialog1.FilterIndex = 1;
             openFileDialog1.RestoreDirectory = true;
@@ -118,43 +117,34 @@ namespace EmguCVRecognition
        {
 
            Capture capture = new Capture(); //create a camera capture
-  
            Emgu.CV.Image<Bgr, Byte> img = capture.QueryFrame();
            this.im2.Image = img; //draw the image obtained from camera
                
        }
 
-   
-        
+
+    
 
         private void imageBox1_Click(object sender, EventArgs e)
         {
             var mouseEventArgs = e as MouseEventArgs;
-            int x = (int)(mouseEventArgs.X / im1.ZoomScale);//((float) im1.Width / (float) im1.Image.Size.Width));
-            int y = (int)(mouseEventArgs.Y / im1.ZoomScale);//((float) im1.Height / (float) im1.Image.Size.Height));
+            int imWidth, imHeight, boxWidth, boxHeight;
+            imWidth = im1.Image.Size.Width;
+            imHeight = im1.Image.Size.Height;
+            boxWidth = im1.Size.Width;
+            boxHeight = im1.Size.Height;
+
+            Point mouse = TranslateZoomMousePosition(mouseEventArgs.X, mouseEventArgs.Y, imWidth, imHeight, boxWidth, boxHeight);
+            int x = mouse.X;//(int)(mouseEventArgs.X / im1.ZoomScale);//((float) im1.Width / (float) im1.Image.Size.Width));
+            int y = mouse.Y;//(int)(mouseEventArgs.Y / im1.ZoomScale);//((float) im1.Height / (float) im1.Image.Size.Height));
             if (mouseEventArgs != null) label1.Text = "X= " + x + " Y= " + y;
             Emgu.CV.Image<Hsv, byte> inImg = LoadedImages[listBox1.SelectedItem.ToString()];
             Hsv pcolor = inImg[y, x];
 
             Emgu.CV.Image<Gray, byte> outImg;
-            double lowH = Math.Max(pcolor.Hue - 10, 0);
-            double lowS = Math.Max(pcolor.Satuation - 20, 0);
-            double lowV = Math.Max(pcolor.Value - 20, 0);
-            double highH = Math.Min(pcolor.Hue + 10, 179);
-            double highS = Math.Min(pcolor.Satuation + 20, 255);
-            double highV = Math.Min(pcolor.Value + 20, 255);
-
-            outImg = inImg.InRange(new Hsv(lowH, lowS, lowV), new Hsv(highH, highS, highV));
+            outImg = thresholdHSVtoGray(inImg, pcolor, 10, 20, 20);
             imageBox2.Image = outImg;
             imageBox2.Update();
-
-            /*for (int i = -1; i < 2; i++)
-            {
-                for (int j = -1; j < 2; j++)
-                    inImg[y + i, x + j] = new Hsv(0,0,255);
-            }
-            im1.Image = inImg;
-            im1.Update();*/
         }
 
         private void imageBox2_Click(object sender, EventArgs e)
@@ -170,6 +160,7 @@ namespace EmguCVRecognition
         private void button3_Click(object sender, EventArgs e)
         {
             if (im2.Image == null) return;
+
             shapes.Clear();
             Emgu.CV.Image<Hsv, byte> refImg = (Emgu.CV.Image<Hsv, byte>)im1.Image;
             Emgu.CV.Image<Gray, byte> inImg = (Emgu.CV.Image<Gray, byte>)im2.Image;
@@ -232,6 +223,7 @@ namespace EmguCVRecognition
                     LineSegment2D line2 = new LineSegment2D(points[current.Total - 1], points[0]);
                     outImg.Draw(line2, col, 2);
 
+
                     string data = "";
                     foreach (ShapeColorObject s in shapes)
                     {
@@ -247,5 +239,77 @@ namespace EmguCVRecognition
             }
         }
 
+
+        /// <summary>
+        /// Nimmt HSV Bild, vergleicht mit eingegebener Farbe und gibt binaeres Graubild zurueck
+        /// </summary>
+        /// <param name="inImg">Eingabe HSV-bild</param>
+        /// <param name="pcolor">Vergleichsfarbe</param>
+        /// <param name="dHue">Farbtoleranz</param>
+        /// <param name="dSaturation">Saettigungstoleranz</param>
+        /// <param name="dValue">Helligeitstoleranz</param>
+        /// <returns></returns>
+        private Emgu.CV.Image<Gray, byte> thresholdHSVtoGray(Emgu.CV.Image<Hsv, byte> inImg, Hsv pcolor, int dHue, int dSaturation, int dValue)
+        {
+            double lowH = Math.Max(pcolor.Hue - dHue, 0);
+            double lowS = Math.Max(pcolor.Satuation - dSaturation, 0);
+            double lowV = Math.Max(pcolor.Value - dValue, 0);
+            double highH = Math.Min(pcolor.Hue + dHue, 179);
+            double highS = Math.Min(pcolor.Satuation + dSaturation, 255);
+            double highV = Math.Min(pcolor.Value + dValue, 255);
+            return inImg.InRange(new Hsv(lowH, lowS, lowV), new Hsv(highH, highS, highV));
+        }
+
+
+        /// <summary>
+        /// Rechnet die Eingabekoordinaten in Bild/Pixelkoordinaten um
+        /// Koordinaten werden auf Bildkoordinaten geclamped
+        /// </summary>
+        /// <param name="x">Mouseposition.x in imageBox</param>
+        /// <param name="y">Mouseposition.y in imageBox</param>
+        /// <param name="imWidth">Bildbreite</param>
+        /// <param name="imHeight">Bildhoehe</param>
+        /// <param name="boxWidth">imageboxbreite</param>
+        /// <param name="boxHeight">imageboxhoehe</param>
+        /// <returns></returns>
+        protected Point TranslateZoomMousePosition(int x, int y, int imWidth, int imHeight, int boxWidth,int boxHeight)
+        {
+            
+            float imageAspect = (float)imWidth / imHeight;
+            float controlAspect = boxWidth / boxHeight;
+            float newX = x;
+            float newY = y;
+            if (imageAspect > controlAspect)
+            {
+                // This means that we are limited by width, 
+                // meaning the image fills up the entire control from left to right
+                float ratioWidth = (float)imWidth / boxWidth;
+                newX *= ratioWidth;
+                float scale = (float)boxWidth / imWidth;
+                float displayHeight = scale * imHeight;
+                float diffHeight = boxHeight - displayHeight;
+                diffHeight /= 2;
+                newY -= diffHeight;
+                newY /= scale;
+            }
+            else
+            {
+                // This means that we are limited by height, 
+                // meaning the image fills up the entire control from top to bottom
+                float ratioHeight = (float)imHeight / boxHeight;
+                newY *= ratioHeight;
+                float scale = (float)boxHeight / imHeight;
+                float displayWidth = scale * imWidth;
+                float diffWidth = boxWidth - displayWidth;
+                diffWidth /= 2;
+                newX -= diffWidth;
+                newX /= scale;
+            }
+
+            newX = Math.Min(Math.Max(0, newX), imWidth-1);
+            newY = Math.Min(Math.Max(0, newY), imHeight-1);
+
+            return new Point((int)newX, (int)newY);
+        }
     }
 }
