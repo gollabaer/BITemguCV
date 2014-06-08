@@ -11,6 +11,7 @@ namespace EmguCVRecognition
   public  class ShapeColorObject
     {
         public string image;
+        public Point previousPosition;
         public List<LineSegment2D> lineSegments; 
         double area;
         public shape type;
@@ -39,6 +40,7 @@ namespace EmguCVRecognition
             this.x = x;
             this.y = y;
             lineSegments = new List<LineSegment2D>();
+            previousPosition = pos;
         }
 
         public bool compare(ShapeColorObject shape2, int cTolerance, int aTolerance)
@@ -87,6 +89,8 @@ namespace EmguCVRecognition
         public void drawOnImg(ref Emgu.CV.Image<Hsv,byte> img){
             foreach(LineSegment2D segment in lineSegments)
                 img.Draw(segment,new Hsv((int)type,240,240), 2);
+            if (previousPosition != null)//klappt nicht hat immer nen wert
+                img.Draw(new LineSegment2D(previousPosition, pos), new Hsv((int)type, 255, 255), 2);
         }
 
         public Hsv getColor() { return color; }

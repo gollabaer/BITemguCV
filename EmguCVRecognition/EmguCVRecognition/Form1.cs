@@ -170,9 +170,11 @@ namespace EmguCVRecognition
                     dist = d;
                 }
             }
-            if(temp!=null)
-            chosenshapes.Add(temp);
-
+            if (temp != null)
+            {
+                temp.image = listBox1.SelectedItem.ToString();
+                chosenshapes.Add(temp);
+            }
             #region DrawImages
             foreach (ShapeColorObject shp in chosenshapes)
             {
@@ -203,11 +205,13 @@ namespace EmguCVRecognition
         private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
             im1.Image = LoadedImages[listBox1.SelectedItem.ToString()];
+            if(workImages.ContainsKey(listBox1.SelectedItem.ToString()))
+            im2.Image = workImages[listBox1.SelectedItem.ToString()];
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-            
+            searchOverImages();
         }
 
 
@@ -378,7 +382,42 @@ namespace EmguCVRecognition
             return samecoloredshapes;
         }
 
+        private void searchOverImages()
+        {
+            int index = listBox1.SelectedIndex;
+            for (int i = index; i < listBox1.Items.Count; i++) {
 
+                for (int j = 0; j < chosenshapes.Count; j++) {
+                    
+                    if(chosenshapes.ElementAt(j).image.Equals("Image:"+(i-1))){
+                        List<ShapeColorObject> templist = findSimilarShapeinPicture(chosenshapes.ElementAt(j), LoadedImages["Image:" + i]);
+                        if (templist.Count != 0)
+                        {
+                            ShapeColorObject tempshape = templist.ElementAt(0);
+                            tempshape.previousPosition = chosenshapes.ElementAt(j).pos;
+                            tempshape.image = "Image:"+i;
+                            chosenshapes.Add(tempshape);
+                        }
+                    }
+
+                }
+            
+            }
+
+            for (int i = index; i < listBox1.Items.Count; i++) {
+                Image<Hsv, byte> tempimage = LoadedImages["Image:" + i].Copy();
+                
+                for (int j = 0; j < chosenshapes.Count; j++) {
+                    if (chosenshapes.ElementAt(j).image.Equals("Image:" + i))
+                    {
+                        chosenshapes.ElementAt(j).drawOnImg(ref tempimage);
+                    }
+                }
+
+                workImages["Image:" + i] = tempimage;
+            }
+            
+        }   
 
     }
 }
