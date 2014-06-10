@@ -61,12 +61,24 @@ namespace EmguCVRecognition
           
         }
 
+        private void reset()
+        {
+            chosenshapes.Clear();
+            trackedshapes.Clear();
+            label2.Text = "chosen shapes:";
+            label3.Text = "tracked shapes:";
+        }
+
         private void button1_Click(object sender, EventArgs e)
         {
             if (imagesloaded)
             {
-                MessageBox.Show("Images can only be loaded once!");
-                return;
+                //reset and clear everything if images were loaded before
+                reset(); 
+                LoadedImages.Clear();
+                workImages.Clear();
+                listBox1.Items.Clear();
+                listBox1.Update();
             }
 
             //--Initialize openFiledialogue---
@@ -117,17 +129,6 @@ namespace EmguCVRecognition
             imagesloaded = true;
         }
 
-
-            
-                
-
-       private void button2_Click(object sender, EventArgs e)
-       {
-
-
-       }
-
-
         private void imageBox1_Click(object sender, EventArgs e)
         {
             //--Get Mouseposition in Pixelcoordinates--------
@@ -169,39 +170,29 @@ namespace EmguCVRecognition
                 if (temp == null || d < dist)
                 {
                     temp = shp;
+                    temp.image = listBox1.SelectedItem.ToString();
                     dist = d;
                 }
             }
-            if (temp != null)
+            if (temp != null && !chosenshapes.Contains(temp))
             {
-                temp.image = listBox1.SelectedItem.ToString();
                 chosenshapes.Add(temp);
-            }
-            #region DrawImages
-            foreach (ShapeColorObject shp in trackedshapes)
-            {
-                shp.drawOnImg(ref outImg);
+                //trackedshapes.Add(temp);                
             }
 
-            string data = "";
-            foreach (ShapeColorObject s in trackedshapes)
+            foreach (ShapeColorObject shp in chosenshapes)
             {
-                data += s.toString() + "\n";
-                outImg.Draw(s.toString(), ref font, s.pos, new Hsv(0, 255, 255));
-                outImg.Draw(new Cross2DF(new PointF((float)s.pos.X, (float)s.pos.Y), (float)5.0, (float)5.0), new Hsv(0, 200, 200), 2);
+                shp.drawOnImg(ref outImg);
+                im2.Image = outImg;
+                im2.Update();
             }
-            label2.Text = data;
-            im2.Image = outImg;
-            im2.Update();
-            #endregion
+
+            label2.Text = "chosen shapes:";
+            foreach (ShapeColorObject shape in chosenshapes)
+                label2.Text += "\n" + shape.toString();
             //
             ///-CODE VON BUTTON3--ENDE----
             //
-        }
-
-        private void imageBox2_Click(object sender, EventArgs e)
-        {
-
         }
 
         private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
@@ -214,6 +205,9 @@ namespace EmguCVRecognition
         private void button3_Click(object sender, EventArgs e)
         {
             searchOverImages();
+            label3.Text = "tracked shapes:";
+            foreach (ShapeColorObject shape in trackedshapes)
+                label3.Text += "\n" + shape.toString();
         }
 
 
@@ -252,25 +246,25 @@ namespace EmguCVRecognition
                     meanY /= current.Total;
                     ShapeColorObject newObj; 
                     Hsv col;
-                    if (current.Total == 3)
+                    if (current.Total == 3) //3 vertices
                     {
                         col = new Hsv(0, 255, 220);
                        newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.triangle, refImg[meanY, meanX], meanX, meanY);
                         funkshapes.Add(newObj);
                     }
-                    else if (current.Total == 4 && current.Convex)
+                    else if (current.Total == 4 && current.Convex) //4 vertices convex
                     {
                         col = new Hsv(45, 255, 220);
                         newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.rectangle, refImg[meanY, meanX], meanX, meanY);
                         funkshapes.Add(newObj);
                     }
-                    else if (current.Total > 8 && current.Convex)
+                    else if (current.Total > 8 && current.Convex) //8+ vertices (circle) convex
                     {
                         col = new Hsv(90, 255, 220);
                         newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.circle, refImg[meanY, meanX], meanX, meanY);
                         funkshapes.Add(newObj);
                     }
-                    else
+                    else //other shapes
                     {
                         col = new Hsv(135, 255, 220);
                         newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.undefined, refImg[meanY, meanX], meanX, meanY);
@@ -279,10 +273,9 @@ namespace EmguCVRecognition
 
                    for (int i = 0; i < current.Total - 1; i++)
                    {
-                         newObj.lineSegments.Add(new LineSegment2D(points[i], points[i + 1]));
-                            
-
+                         newObj.lineSegments.Add(new LineSegment2D(points[i], points[i + 1])); //add contour line segments to new ShapeColorObject
                    }
+
                    newObj.lineSegments.Add(new LineSegment2D(points[current.Total - 1], points[0]));
                         
                   
@@ -365,7 +358,7 @@ namespace EmguCVRecognition
         }
 
         /// <summary>
-        /// Muss auf jeden fall noch mal gemacht werden
+        /// Finds shapes similar to template in the given image. Similarity calculated by ShapeColorObject.compare method
         /// </summary>
         /// <param name="template"></param>
         /// <param name="image"></param>
@@ -378,6 +371,7 @@ namespace EmguCVRecognition
 
             for (int i = 0; i < samecoloredshapes.Count ; i++)
             {
+                //only adds found object if similar to template and not yet tracked
                 if (template.compare(samecoloredshapes.ElementAt(i), 5, 5) && !trackedshapes.Contains(samecoloredshapes.ElementAt(i)))
                     similar.Add(samecoloredshapes.ElementAt(i));
             }
@@ -386,10 +380,14 @@ namespace EmguCVRecognition
 
         private void searchOverImages()
         {
+            if (chosenshapes.Count == 0)
+                return;
+            
+            //reset tracked shapes to only include starting shapes
             trackedshapes.Clear();
             trackedshapes.AddRange(chosenshapes);
             int index = listBox1.SelectedIndex;
-            for (int i = index; i < listBox1.Items.Count; i++) {
+            for (int i = 0; i < listBox1.Items.Count; i++) {
 
                 for (int j = 0; j < trackedshapes.Count; j++) {
                     
@@ -408,7 +406,6 @@ namespace EmguCVRecognition
                     }
 
                 }
-                ;
             }
 
             for (int i = index; i < listBox1.Items.Count; i++) {
@@ -418,7 +415,7 @@ namespace EmguCVRecognition
                     if (trackedshapes.ElementAt(j).image.Equals("Image:" + i))
                     {
                         trackedshapes.ElementAt(j).drawOnImg(ref tempimage);
-                        tempimage.Draw(new Cross2DF(trackedshapes.ElementAt(j).predictedPos(), 5, 5), new Hsv(0, 0, 255), 3);
+                        tempimage.Draw(new Cross2DF(trackedshapes.ElementAt(j).predictedPos(), 5, 5), new Hsv(29, 170, 255), 3);
                     }
                 }
 
@@ -458,16 +455,18 @@ namespace EmguCVRecognition
                 shp.drawOnImg(ref outImg);
             }
 
-            string data = "";
             foreach (ShapeColorObject s in trackedshapes)
             {
-                data += s.toString() + "\n";
                 outImg.Draw(s.toString(), ref font, s.pos, new Hsv(0, 255, 255));
                 outImg.Draw(new Cross2DF(new PointF((float)s.pos.X, (float)s.pos.Y), (float)5.0, (float)5.0), new Hsv(0, 200, 200), 2);
             }
-            label2.Text = data;
             im2.Image = outImg;
             im2.Update();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            reset();
         }
 
     }

@@ -35,7 +35,9 @@ namespace EmguCVRecognition
 
         public Point predictedPos()
         {
-            return new Point(pos.X + 2 * deltaPos.X - prev.deltaPos.X, pos.Y + 2 * deltaPos.Y - prev.deltaPos.Y);
+            int deltaX = (prev.deltaPos.X == 0) ? deltaPos.X : prev.deltaPos.X;
+            int deltaY = (prev.deltaPos.Y == 0) ? deltaPos.Y : prev.deltaPos.Y;
+            return new Point(pos.X + 2 * deltaPos.X - deltaX, pos.Y + 2 * deltaPos.Y - deltaY);
         }
 
         public Point deltaPos
@@ -68,7 +70,7 @@ namespace EmguCVRecognition
 
         public bool Equals(ShapeColorObject shape2)
         {
-            return (this.pos == shape2.pos && this.color.Hue == shape2.color.Hue && this.type == shape2.type);
+            return (this.pos == shape2.pos && this.color.Hue == shape2.color.Hue && this.type == shape2.type && this.image == shape2.image);
         }
 
         private bool compareHues(double h1, double h2, int tolerance)
@@ -90,8 +92,8 @@ namespace EmguCVRecognition
 
         private bool compare(double a, double b, double tolerance)
         {
-            double low = Math.Max(b - tolerance, 0);
-            double high = b + tolerance;
+            double low = Math.Max(b - b * tolerance/100, 0);
+            double high = b + b * tolerance/100;
 
             return (a > low && a < high);
         }
@@ -99,7 +101,8 @@ namespace EmguCVRecognition
         public string toString()
         {
             string s = type.ToString();
-            s += " @(" + x + "; " + y + "): " + color.Hue;
+            string a = (area >= 10000) ? (int)(area / 1000) + "k" : area + "";
+            s += " @(" + x + "; " + y + "; " + a + "): " + color.Hue;
             return s;
         }
         
