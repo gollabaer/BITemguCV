@@ -8,7 +8,7 @@ using Emgu.CV;
 
 namespace EmguCVRecognition
 {
-  public  class ShapeColorObject
+  public  class ShapeColorObject: IEquatable<ShapeColorObject>
     {
         public string image;
         public Point previousPosition;
@@ -20,7 +20,7 @@ namespace EmguCVRecognition
             triangle = 0,
             rectangle = 45,
             circle = 90,
-            undefined =145
+            undefined = 145
         };
 
         private Hsv color;
@@ -30,6 +30,11 @@ namespace EmguCVRecognition
         public Point pos
         {
             get { return new Point(x, y); }
+        }
+
+        public double dist
+        {
+            get { return Math.Sqrt((pos.X - previousPosition.X) * (pos.X - previousPosition.X) + (pos.Y - previousPosition.Y) * (pos.Y - previousPosition.Y)); }
         }
 
         public ShapeColorObject(double area, shape type, Hsv color, int x, int y)
@@ -47,11 +52,16 @@ namespace EmguCVRecognition
         {
             if (!compareHues(this.color.Hue, shape2.color.Hue, cTolerance))
                 return false;
-            else if (type != shape2.type)
+            else if (this.type != shape2.type)
                 return false;
-            else if (!compare(area, shape2.area, aTolerance))
+            else if (!compare(this.area, shape2.area, aTolerance))
                 return false;
             else return true;
+        }
+
+        public bool Equals(ShapeColorObject shape2)
+        {
+            return (this.pos == shape2.pos && this.color.Hue == shape2.color.Hue && this.type == shape2.type);
         }
 
         private bool compareHues(double h1, double h2, int tolerance)

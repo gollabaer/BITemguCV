@@ -376,7 +376,7 @@ namespace EmguCVRecognition
 
             for (int i = 0; i < samecoloredshapes.Count ; i++)
             {
-                if (template.compare(samecoloredshapes.ElementAt(i), 5, 5))
+                if (template.compare(samecoloredshapes.ElementAt(i), 5, 5) && !chosenshapes.Contains(samecoloredshapes.ElementAt(i)))
                     similar.Add(samecoloredshapes.ElementAt(i));
             }
             return samecoloredshapes;
@@ -390,9 +390,12 @@ namespace EmguCVRecognition
                 for (int j = 0; j < chosenshapes.Count; j++) {
                     
                     if(chosenshapes.ElementAt(j).image.Equals("Image:"+(i-1))){
-                        List<ShapeColorObject> templist = findSimilarShapeinPicture(chosenshapes.ElementAt(j), LoadedImages["Image:" + i]);
+                        List<ShapeColorObject> templist = new List<ShapeColorObject>();
+                        templist = findSimilarShapeinPicture(chosenshapes.ElementAt(j), LoadedImages["Image:" + i]);
                         if (templist.Count != 0)
                         {
+                            int k = i - index;
+                            //findClosest(templist, 
                             ShapeColorObject tempshape = templist.ElementAt(0);
                             tempshape.previousPosition = chosenshapes.ElementAt(j).pos;
                             tempshape.image = "Image:"+i;
