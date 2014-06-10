@@ -29,6 +29,7 @@ namespace EmguCVRecognition
         public MCvFont font;
 
         List<ShapeColorObject> shapes;
+        List<ShapeColorObject> trackedshapes;
         List<ShapeColorObject> chosenshapes;
 
         //----------------------------------------------------
@@ -43,6 +44,7 @@ namespace EmguCVRecognition
             im1 = imageBox1;
             im2 = imageBox2;
             shapes = new List<ShapeColorObject>();
+            trackedshapes = new List<ShapeColorObject>();
             chosenshapes = new List<ShapeColorObject>();
             im1.SizeMode = PictureBoxSizeMode.Zoom;
             im2.SizeMode = PictureBoxSizeMode.Zoom;
@@ -176,13 +178,13 @@ namespace EmguCVRecognition
                 chosenshapes.Add(temp);
             }
             #region DrawImages
-            foreach (ShapeColorObject shp in chosenshapes)
+            foreach (ShapeColorObject shp in trackedshapes)
             {
                 shp.drawOnImg(ref outImg);
             }
 
             string data = "";
-            foreach (ShapeColorObject s in chosenshapes)
+            foreach (ShapeColorObject s in trackedshapes)
             {
                 data += s.toString() + "\n";
                 outImg.Draw(s.toString(), ref font, s.pos, new Hsv(0, 255, 255));
@@ -376,51 +378,97 @@ namespace EmguCVRecognition
 
             for (int i = 0; i < samecoloredshapes.Count ; i++)
             {
-                if (template.compare(samecoloredshapes.ElementAt(i), 5, 5) && !chosenshapes.Contains(samecoloredshapes.ElementAt(i)))
+                if (template.compare(samecoloredshapes.ElementAt(i), 5, 5) && !trackedshapes.Contains(samecoloredshapes.ElementAt(i)))
                     similar.Add(samecoloredshapes.ElementAt(i));
             }
-            return samecoloredshapes;
+            return similar;
         }
 
         private void searchOverImages()
         {
+            trackedshapes.Clear();
+            trackedshapes.AddRange(chosenshapes);
             int index = listBox1.SelectedIndex;
             for (int i = index; i < listBox1.Items.Count; i++) {
 
-                for (int j = 0; j < chosenshapes.Count; j++) {
+                for (int j = 0; j < trackedshapes.Count; j++) {
                     
-                    if(chosenshapes.ElementAt(j).image.Equals("Image:"+(i-1))){
+                    if(trackedshapes.ElementAt(j).image.Equals("Image:"+(i-1))){
                         List<ShapeColorObject> templist = new List<ShapeColorObject>();
-                        templist = findSimilarShapeinPicture(chosenshapes.ElementAt(j), LoadedImages["Image:" + i]);
+                        templist = findSimilarShapeinPicture(trackedshapes.ElementAt(j), LoadedImages["Image:" + i]);
                         if (templist.Count != 0)
                         {
-                            int k = i - index;
-                            //findClosest(templist, 
-                            ShapeColorObject tempshape = templist.ElementAt(0);
-                            tempshape.previousPosition = chosenshapes.ElementAt(j).pos;
+                            ShapeColorObject tempshape = findClosest(templist, trackedshapes.ElementAt(j));
+                            //ShapeColorObject tempshape = templist.ElementAt(0);
+                            tempshape.previousPosition = trackedshapes.ElementAt(j).pos;
+                            tempshape.prev = trackedshapes.ElementAt(j);
                             tempshape.image = "Image:"+i;
-                            chosenshapes.Add(tempshape);
+                            trackedshapes.Add(tempshape);
                         }
                     }
 
                 }
-            
+                ;
             }
 
             for (int i = index; i < listBox1.Items.Count; i++) {
                 Image<Hsv, byte> tempimage = LoadedImages["Image:" + i].Copy();
                 
-                for (int j = 0; j < chosenshapes.Count; j++) {
-                    if (chosenshapes.ElementAt(j).image.Equals("Image:" + i))
+                for (int j = 0; j < trackedshapes.Count; j++) {
+                    if (trackedshapes.ElementAt(j).image.Equals("Image:" + i))
                     {
-                        chosenshapes.ElementAt(j).drawOnImg(ref tempimage);
+                        trackedshapes.ElementAt(j).drawOnImg(ref tempimage);
+                        tempimage.Draw(new Cross2DF(trackedshapes.ElementAt(j).predictedPos(), 5, 5), new Hsv(0, 0, 255), 3);
                     }
                 }
 
                 workImages["Image:" + i] = tempimage;
             }
             
-        }   
+        }
+
+        private ShapeColorObject findClosest(List<ShapeColorObject> list, ShapeColorObject template)
+        {
+            if (list.Count == 1)
+                return list.ElementAt(0);
+            else
+            {
+                Point predicted = template.predictedPos();
+                //--Find closest shape---------
+                ShapeColorObject temp = null;
+                int dist = 0;
+                foreach (ShapeColorObject shp in list)
+                {
+                    int d = (shp.pos.X - predicted.X) * (shp.pos.X - predicted.X) + (shp.pos.Y - predicted.Y) * (shp.pos.Y - predicted.Y);
+                    if (temp == null || d < dist)
+                    {
+                        temp = shp;
+                        dist = d;
+                    }
+                }
+                return temp;
+            }
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            Emgu.CV.Image<Hsv, byte> outImg = (Emgu.CV.Image<Hsv, byte>)im2.Image;
+            foreach (ShapeColorObject shp in trackedshapes)
+            {
+                shp.drawOnImg(ref outImg);
+            }
+
+            string data = "";
+            foreach (ShapeColorObject s in trackedshapes)
+            {
+                data += s.toString() + "\n";
+                outImg.Draw(s.toString(), ref font, s.pos, new Hsv(0, 255, 255));
+                outImg.Draw(new Cross2DF(new PointF((float)s.pos.X, (float)s.pos.Y), (float)5.0, (float)5.0), new Hsv(0, 200, 200), 2);
+            }
+            label2.Text = data;
+            im2.Image = outImg;
+            im2.Update();
+        }
 
     }
 }

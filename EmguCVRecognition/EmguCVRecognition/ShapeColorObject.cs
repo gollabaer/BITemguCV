@@ -15,6 +15,7 @@ namespace EmguCVRecognition
         public List<LineSegment2D> lineSegments; 
         double area;
         public shape type;
+        public ShapeColorObject prev;
         public enum shape
         {
             triangle = 0,
@@ -32,9 +33,14 @@ namespace EmguCVRecognition
             get { return new Point(x, y); }
         }
 
-        public double dist
+        public Point predictedPos()
         {
-            get { return Math.Sqrt((pos.X - previousPosition.X) * (pos.X - previousPosition.X) + (pos.Y - previousPosition.Y) * (pos.Y - previousPosition.Y)); }
+            return new Point(pos.X + 2 * deltaPos.X - prev.deltaPos.X, pos.Y + 2 * deltaPos.Y - prev.deltaPos.Y);
+        }
+
+        public Point deltaPos
+        {
+            get { return new Point(pos.X - previousPosition.X, pos.Y - previousPosition.Y); }
         }
 
         public ShapeColorObject(double area, shape type, Hsv color, int x, int y)
@@ -46,6 +52,7 @@ namespace EmguCVRecognition
             this.y = y;
             lineSegments = new List<LineSegment2D>();
             previousPosition = pos;
+            prev = this;
         }
 
         public bool compare(ShapeColorObject shape2, int cTolerance, int aTolerance)
