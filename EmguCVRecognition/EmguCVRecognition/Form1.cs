@@ -131,7 +131,7 @@ namespace EmguCVRecognition
                     currentImage++;
                 }
                 listBox1.EndUpdate();
-
+                imagesloaded = true;
 
                 if (checkBox1.Checked) {
                     LoadedImages = BackgroundSubtractor.getWithoutBackground(bgrImages);
@@ -139,8 +139,8 @@ namespace EmguCVRecognition
 
             }
             //----------------------------------------
-            listBox1.SelectedIndex = 0;
-            imagesloaded = true;
+            
+            
         }
 
         private void imageBox1_Click(object sender, EventArgs e)
@@ -181,7 +181,8 @@ namespace EmguCVRecognition
             foreach (ShapeColorObject shp in shapes)
             {
                 int d = (shp.pos.X - mouse.X) * (shp.pos.X - mouse.X) + (shp.pos.Y - mouse.Y) * (shp.pos.Y - mouse.Y);
-                if (temp == null || d < dist)
+                if (ShapeColorObject.compareHues(shp.getColor().Hue, pcolor.Hue, 10))
+                if ( temp == null || d < dist)
                 {
                     temp = shp;
                     temp.image = listBox1.SelectedItem.ToString();
@@ -262,6 +263,7 @@ namespace EmguCVRecognition
                     Hsv col;
                     if (current.Total == 3) //3 vertices
                     {
+                        
                         col = new Hsv(0, 255, 220);
                        newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.triangle, refImg[meanY, meanX], meanX, meanY);
                         funkshapes.Add(newObj);
@@ -311,7 +313,7 @@ namespace EmguCVRecognition
         private Emgu.CV.Image<Gray, byte> thresholdHSVtoGray(Emgu.CV.Image<Hsv, byte> inImg, Hsv pcolor, int dHue, int dSaturation, int dValue)
         {
             double lowH, lowS, lowV, highH, highS, highV;
-            if (pcolor.Value > 240 || pcolor.Value < 15)
+            if (pcolor.Value < 15)
             {
                 lowH = 0; highH = 179;
                 lowS = 0; highS = 255;
@@ -400,7 +402,7 @@ namespace EmguCVRecognition
             for (int i = 0; i < samecoloredshapes.Count ; i++)
             {
                 //only adds found object if similar to template and not yet tracked
-                if (template.compare(samecoloredshapes.ElementAt(i), 5, 5) && !trackedshapes.Contains(samecoloredshapes.ElementAt(i)))
+                if (template.compare(samecoloredshapes.ElementAt(i), 5, 30) && !trackedshapes.Contains(samecoloredshapes.ElementAt(i)))
                     similar.Add(samecoloredshapes.ElementAt(i));
             }
             return similar;

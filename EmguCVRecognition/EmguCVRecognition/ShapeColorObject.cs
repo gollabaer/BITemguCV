@@ -73,9 +73,9 @@ namespace EmguCVRecognition
             return (this.pos == shape2.pos && this.color.Hue == shape2.color.Hue && this.type == shape2.type && this.image == shape2.image);
         }
 
-        private bool compareHues(double h1, double h2, int tolerance)
+        public static bool compareHues(double h1, double h2, int tolerance)
         {
-            tolerance = Math.Max(tolerance, 63);
+            tolerance = Math.Min(Math.Max(tolerance, 0), 63);
             double low = h2 - tolerance;
             double high = h2 + tolerance;
             bool result = false;
