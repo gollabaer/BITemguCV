@@ -136,7 +136,7 @@ namespace EmguCVRecognition
                 if (checkBox1.Checked) {
                     LoadedImages = BackgroundSubtractor.getWithoutBackground(bgrImages);
                 }
-
+                listBox1.SelectedIndex = 0;
             }
             //----------------------------------------
             
