@@ -35,7 +35,7 @@ namespace EmguCVRecognition
         //----------------------------------------------------
         //Parameter
         int mediansize = 5;
-        int gaussiansize = 5;
+        int gaussiansize = 1;
 
         //------------------------------------------------
 
@@ -116,7 +116,7 @@ namespace EmguCVRecognition
                         string loadedImageName = "Image:"+currentImage;
                         //Save Images
                         listBox1.Items.Add(loadedImageName);
-                        LoadedImages.Add(loadedImageName, loadedImage.SmoothGaussian(gaussiansize) );
+                        LoadedImages.Add(loadedImageName, loadedImage.SmoothMedian(mediansize) );
                         if(checkBox1.Checked)
                             bgrImages.Add(loadedImageName,new Image<Bgr,byte>(tempBitmap).SmoothGaussian(gaussiansize));
                        
@@ -244,6 +244,8 @@ namespace EmguCVRecognition
             for (Contour<Point> contours = inImg.FindContours(); contours != null; contours = contours.HNext)
             {
                 Contour<Point> current = contours.ApproxPoly(contours.Perimeter * 0.008);
+                
+
                 if (current.Area > 200)
                 {
                     Point[] points = current.ToArray();
@@ -293,7 +295,13 @@ namespace EmguCVRecognition
                    }
 
                    newObj.lineSegments.Add(new LineSegment2D(points[current.Total - 1], points[0]));
-                        
+                   
+                    double cirumf = 0;
+                    foreach(LineSegment2D s in newObj.lineSegments)
+                        cirumf += s.Length;
+
+
+                    newObj.circularity =(float) (cirumf * cirumf / current.Area);
                   
                 }//ende if(200>area)
             }//ende von for(contours....)
