@@ -159,7 +159,7 @@ namespace EmguCVRecognition
             Emgu.CV.Image<Gray, byte> inImg = (Emgu.CV.Image<Gray, byte>)im2.Image;
             Emgu.CV.Image<Hsv, byte> outImg = inImg.Convert<Hsv, byte>();
 
-            shapes.AddRange(findShapesinGrayImg(inImg, refImg));
+            shapes.AddRange(findShapesinGrayImg(inImg, refImg, listBox1.SelectedIndex));
 
             //--Find closest shape---------
             ShapeColorObject temp = null;
@@ -221,7 +221,7 @@ namespace EmguCVRecognition
         /// <param name="lines">outputarray for lines</param>
         /// <param name="colors">outputarry for linecolors</param>
         /// <returns></returns>
-        public static  List<ShapeColorObject> findShapesinGrayImg(Emgu.CV.Image<Gray, Byte> inImg, Emgu.CV.Image<Hsv, Byte> refImg) {
+        public List<ShapeColorObject> findShapesinGrayImg(Emgu.CV.Image<Gray, Byte> inImg, Emgu.CV.Image<Hsv, Byte> refImg, int index) {
 
             if (inImg == null || refImg == null)  return null; 
 
@@ -251,25 +251,29 @@ namespace EmguCVRecognition
                     {
                         
                         col = new Hsv(0, 255, 220);
-                       newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.triangle, refImg[meanY, meanX], meanX, meanY);
+                        newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.triangle, refImg[meanY, meanX], meanX, meanY);
+                        newObj.image = "Image:"+index;
                         funkshapes.Add(newObj);
                     }
                     else if (current.Total == 4 && current.Convex) //4 vertices convex
                     {
                         col = new Hsv(45, 255, 220);
                         newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.rectangle, refImg[meanY, meanX], meanX, meanY);
+                        newObj.image = "Image:" + index;
                         funkshapes.Add(newObj);
                     }
                     else if (current.Total > 8 && current.Convex) //8+ vertices (circle) convex
                     {
                         col = new Hsv(90, 255, 220);
                         newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.circle, refImg[meanY, meanX], meanX, meanY);
+                        newObj.image = "Image:" + index;
                         funkshapes.Add(newObj);
                     }
                     else //other shapes
                     {
                         col = new Hsv(135, 255, 220);
                         newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.undefined, refImg[meanY, meanX], meanX, meanY);
+                        newObj.image = "Image:" + index;
                         funkshapes.Add(newObj);
                     }
 
@@ -375,10 +379,10 @@ namespace EmguCVRecognition
         /// <param name="template"></param>
         /// <param name="image"></param>
         /// <returns></returns>
-        private List<ShapeColorObject> findSimilarShapeinPicture(ShapeColorObject template, Image<Hsv, byte> image) {
+        private List<ShapeColorObject> findSimilarShapeinPicture(ShapeColorObject template, Image<Hsv, byte> image, int index) {
             
             Image<Gray, Byte> threshhImage = thresholdHSVtoGray(image, template.getColor(), 10, 20, 20);
-            List<ShapeColorObject> samecoloredshapes = findShapesinGrayImg(threshhImage, image);
+            List<ShapeColorObject> samecoloredshapes = findShapesinGrayImg(threshhImage, image, index);
             List<ShapeColorObject> similar = new List<ShapeColorObject>();
 
             for (int i = 0; i < samecoloredshapes.Count ; i++)
@@ -405,7 +409,7 @@ namespace EmguCVRecognition
                     
                     if(trackedshapes.ElementAt(j).image.Equals("Image:"+(i-1))){
                         List<ShapeColorObject> templist = new List<ShapeColorObject>();
-                        templist = findSimilarShapeinPicture(trackedshapes.ElementAt(j), LoadedImages["Image:" + i]);
+                        templist = findSimilarShapeinPicture(trackedshapes.ElementAt(j), LoadedImages["Image:" + i], i);
                         if (templist.Count != 0)
                         {
                             ShapeColorObject tempshape = findClosest(templist, trackedshapes.ElementAt(j));
