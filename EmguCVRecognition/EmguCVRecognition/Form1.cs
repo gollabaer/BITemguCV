@@ -296,12 +296,22 @@ namespace EmguCVRecognition
         /// <returns></returns>
         private Emgu.CV.Image<Gray, byte> thresholdHSVtoGray(Emgu.CV.Image<Hsv, byte> inImg, Hsv pcolor, int dHue, int dSaturation, int dValue)
         {
-            double lowH = Math.Max(pcolor.Hue - dHue, 0);
-            double lowS = Math.Max(pcolor.Satuation - dSaturation, 0);
-            double lowV = Math.Max(pcolor.Value - dValue, 0);
-            double highH = Math.Min(pcolor.Hue + dHue, 179);
-            double highS = Math.Min(pcolor.Satuation + dSaturation, 255);
-            double highV = Math.Min(pcolor.Value + dValue, 255);
+            double lowH, lowS, lowV, highH, highS, highV;
+            if (pcolor.Value > 240 || pcolor.Value < 15)
+            {
+                lowH = 0; highH = 179;
+                lowS = 0; highS = 255;
+            }
+            else
+            {
+                lowH = Math.Max(pcolor.Hue - dHue, 0);
+                lowS = Math.Max(pcolor.Satuation - dSaturation, 0);
+                highH = Math.Min(pcolor.Hue + dHue, 179);
+                highS = Math.Min(pcolor.Satuation + dSaturation, 255);
+            }
+            
+            lowV = Math.Max(pcolor.Value - dValue, 0);
+            highV = Math.Min(pcolor.Value + dValue, 255);
             return inImg.InRange(new Hsv(lowH, lowS, lowV), new Hsv(highH, highS, highV));
         }
 
@@ -324,7 +334,7 @@ namespace EmguCVRecognition
             float controlAspect = boxWidth / boxHeight;
             float newX = x;
             float newY = y;
-            if (imageAspect > controlAspect)
+            if (imageAspect < controlAspect)
             {
                 // This means that we are limited by width, 
                 // meaning the image fills up the entire control from left to right
