@@ -95,8 +95,8 @@ namespace EmguCVRecognition
 
         private bool compare(double a, double b, double tolerance)
         {
-            double low = Math.Max(b - b * tolerance/100, 0);
-            double high = b + b * tolerance/100;
+            double low = Math.Max(b - b * tolerance/100.0, 0);
+            double high = b + b * tolerance/100.0;
 
             return (a > low && a < high);
         }
@@ -105,7 +105,7 @@ namespace EmguCVRecognition
         {
             string s = type.ToString();
             string a = (area >= 10000) ? (int)(area / 1000) + "k" : area + "";
-            s += " @(" + x + "; " + y + "; " + a + "): " + color.Hue;
+            s += " @(" + x + "; " + y + ")\n  area: " + a + "\n  hue: " + color.Hue;
             return s;
         }
         

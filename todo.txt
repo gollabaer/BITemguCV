@@ -1,0 +1,4 @@
+//TODO
+- Slider für parameter
+- hover-infos
+- shapecolorobject.tostring

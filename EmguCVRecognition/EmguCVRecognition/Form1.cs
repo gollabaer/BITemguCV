@@ -68,8 +68,8 @@ namespace EmguCVRecognition
         {
             chosenshapes.Clear();
             trackedshapes.Clear();
-            label2.Text = "chosen shapes:";
-            label3.Text = "tracked shapes:";
+            label2.Text = "no shapes chosen";
+            label3.Text = "no shapes tracked";
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -202,9 +202,9 @@ namespace EmguCVRecognition
                 im2.Update();
             }
 
-            label2.Text = "chosen shapes:";
+            label2.Text = "";
             foreach (ShapeColorObject shape in chosenshapes)
-                label2.Text += "\n" + shape.toString();
+                label2.Text += shape.toString() + "\n";
             //
             ///-CODE VON BUTTON3--ENDE----
             //
@@ -220,9 +220,9 @@ namespace EmguCVRecognition
         private void button3_Click(object sender, EventArgs e)
         {
             searchOverImages();
-            label3.Text = "tracked shapes:";
+            label3.Text = "";
             foreach (ShapeColorObject shape in trackedshapes)
-                label3.Text += "\n" + shape.toString();
+                label3.Text += shape.toString() + "\n";
         }
 
 
