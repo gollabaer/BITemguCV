@@ -25,7 +25,8 @@ namespace EmguCVRecognition
             }
 
             //erstelle neuen backgroundsubtractor
-            Emgu.CV.VideoSurveillance.BackgroundSubtractorMOG subtractor = new Emgu.CV.VideoSurveillance.BackgroundSubtractorMOG(4,0, 0, 0);
+            Emgu.CV.VideoSurveillance.BackgroundSubtractorMOG subtractor = new Emgu.CV.VideoSurveillance.BackgroundSubtractorMOG(3,4,0.7,0.01 );
+
         
             Image<Gray, byte> backgroundmodel = new Image<Gray,byte>(images["Image:"+0].Width,images["Image:" +0].Height);
             Image<Bgr, byte> bgrOhneHintergrund = new Image<Bgr, byte>(backgroundmodel.Width,backgroundmodel.Height);

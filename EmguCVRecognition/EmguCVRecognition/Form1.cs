@@ -33,8 +33,11 @@ namespace EmguCVRecognition
         List<ShapeColorObject> chosenshapes;
 
         //----------------------------------------------------
+        //Parameter
+        int mediansize = 5;
+        int gaussiansize = 1;
 
-
+        //------------------------------------------------
 
         public Form1()
         {
@@ -71,6 +74,9 @@ namespace EmguCVRecognition
 
         private void button1_Click(object sender, EventArgs e)
         {
+            Dictionary<string, Image<Bgr, byte>> bgrImages = new Dictionary<string, Image<Bgr, byte>>();
+
+
             if (imagesloaded)
             {
                 //reset and clear everything if images were loaded before
@@ -110,8 +116,10 @@ namespace EmguCVRecognition
                         string loadedImageName = "Image:"+currentImage;
                         //Save Images
                         listBox1.Items.Add(loadedImageName);
-                        LoadedImages.Add(loadedImageName, loadedImage);
-                        listBox1.SelectedIndex = 0;
+                        LoadedImages.Add(loadedImageName, loadedImage.SmoothMedian(mediansize) );
+                        if(checkBox1.Checked)
+                            bgrImages.Add(loadedImageName,new Image<Bgr,byte>(tempBitmap).SmoothGaussian(gaussiansize));
+                       
                     }
 
                     catch (Exception ex)
@@ -124,8 +132,14 @@ namespace EmguCVRecognition
                 }
                 listBox1.EndUpdate();
                 imagesloaded = true;
+
+                if (checkBox1.Checked) {
+                    LoadedImages = BackgroundSubtractor.getWithoutBackground(bgrImages);
+                }
+                listBox1.SelectedIndex = 0;
             }
             //----------------------------------------
+            
             
         }
 
@@ -230,6 +244,8 @@ namespace EmguCVRecognition
             for (Contour<Point> contours = inImg.FindContours(); contours != null; contours = contours.HNext)
             {
                 Contour<Point> current = contours.ApproxPoly(contours.Perimeter * 0.008);
+                
+
                 if (current.Area > 200)
                 {
                     Point[] points = current.ToArray();
@@ -283,7 +299,13 @@ namespace EmguCVRecognition
                    }
 
                    newObj.lineSegments.Add(new LineSegment2D(points[current.Total - 1], points[0]));
-                        
+                   
+                    double cirumf = 0;
+                    foreach(LineSegment2D s in newObj.lineSegments)
+                        cirumf += s.Length;
+
+
+                    newObj.circularity =(float) (cirumf * cirumf / current.Area);
                   
                 }//ende if(200>area)
             }//ende von for(contours....)
@@ -318,7 +340,11 @@ namespace EmguCVRecognition
             
             lowV = Math.Max(pcolor.Value - dValue, 0);
             highV = Math.Min(pcolor.Value + dValue, 255);
-            return inImg.InRange(new Hsv(lowH, lowS, lowV), new Hsv(highH, highS, highV));
+            Image<Gray, byte> gray = inImg.InRange(new Hsv(lowH, lowS, lowV), new Hsv(highH, highS, highV));
+            //Bildverbesserung
+            gray.SmoothMedian(mediansize);
+
+            return gray;
         }
 
 
@@ -484,6 +510,8 @@ namespace EmguCVRecognition
         {
             reset();
         }
+
+        
 
     }
 }
