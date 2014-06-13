@@ -20,6 +20,7 @@ namespace EmguCVRecognition
         //-Variables------------------------------------------
         bool imagesloaded = false;
         public Dictionary<string, Emgu.CV.Image<Hsv,Byte>> LoadedImages = new Dictionary<string,Emgu.CV.Image<Hsv,Byte>>();
+        public Dictionary<string, Emgu.CV.Image<Bgr, Byte>> cleanLoadedImages = new Dictionary<string, Emgu.CV.Image<Bgr, Byte>>();
         public Dictionary<string, Emgu.CV.Image<Hsv, Byte>> workImages = new Dictionary<string, Image<Hsv, byte>>();
        
         public List<Emgu.CV.Image<Hsv, byte>> imgs = new List<Emgu.CV.Image<Hsv, byte>>();
@@ -34,8 +35,11 @@ namespace EmguCVRecognition
 
         //----------------------------------------------------
         //Parameter
-        int mediansize = 5;
+        int mediansize = 1;
         int gaussiansize = 1;
+        int dHue = 10;
+        int dSaturation = 20;
+        int dValue = 20;
 
         //------------------------------------------------
 
@@ -76,17 +80,6 @@ namespace EmguCVRecognition
         {
             Dictionary<string, Image<Bgr, byte>> bgrImages = new Dictionary<string, Image<Bgr, byte>>();
 
-
-            if (imagesloaded)
-            {
-                //reset and clear everything if images were loaded before
-                reset(); 
-                LoadedImages.Clear();
-                workImages.Clear();
-                listBox1.Items.Clear();
-                listBox1.Update();
-            }
-
             //--Initialize openFiledialogue---
             OpenFileDialog openFileDialog1 = new OpenFileDialog();
             openFileDialog1.Filter = "Images (*.BMP;*.JPG;*.GIF;*.PNG)|*.BMP;*.JPG;*.GIF;*.PNG";
@@ -101,6 +94,17 @@ namespace EmguCVRecognition
             //---Save Images in Dictionary and display in ListBox----
             if (dialogresult == System.Windows.Forms.DialogResult.OK)
             {
+                if (imagesloaded)
+                {
+                    //reset and clear everything if images were loaded before
+                    reset();
+                    cleanLoadedImages.Clear();
+                    LoadedImages.Clear();
+                    workImages.Clear();
+                    listBox1.Items.Clear();
+                    //listBox1.Update();
+                }
+
                 int currentImage = 0;
                 // Read the files
                 listBox1.BeginUpdate();
@@ -112,13 +116,15 @@ namespace EmguCVRecognition
                         //Convert Images to Emgu Format
                         Image tempImage = Image.FromFile(file);
                         Bitmap tempBitmap = new Bitmap(tempImage);
-                        Emgu.CV.Image<Hsv,Byte> loadedImage = new Emgu.CV.Image<Hsv, Byte>(tempBitmap);
+                        Emgu.CV.Image<Bgr, byte> cleanImage = new Emgu.CV.Image<Bgr, byte>(tempBitmap);
+                        Emgu.CV.Image<Hsv,Byte> loadedImage = new Emgu.CV.Image<Hsv, byte>(tempBitmap);
                         string loadedImageName = "Image:"+currentImage;
                         //Save Images
                         listBox1.Items.Add(loadedImageName);
+                        cleanLoadedImages.Add(loadedImageName, cleanImage);
                         LoadedImages.Add(loadedImageName, loadedImage.SmoothMedian(mediansize) );
                         if(checkBox1.Checked)
-                            bgrImages.Add(loadedImageName,new Image<Bgr,byte>(tempBitmap).SmoothGaussian(gaussiansize));
+                            bgrImages.Add(loadedImageName, cleanImage.SmoothGaussian(gaussiansize));
                        
                     }
 
@@ -161,7 +167,7 @@ namespace EmguCVRecognition
             Hsv pcolor = original[y, x];
             if (mouseEventArgs != null) label1.Text = "X= " + x + " Y= " + y+ " Color=" + pcolor.Hue + " ;"+ + pcolor.Satuation + " ;"+ pcolor.Value ;
             Emgu.CV.Image<Gray, byte> threshedimage;
-            threshedimage = thresholdHSVtoGray(original, pcolor, 10, 20, 20);
+            threshedimage = thresholdHSVtoGray(original, pcolor);
             imageBox2.Image = threshedimage;
 
             //
@@ -181,16 +187,17 @@ namespace EmguCVRecognition
             foreach (ShapeColorObject shp in shapes)
             {
                 int d = (shp.pos.X - mouse.X) * (shp.pos.X - mouse.X) + (shp.pos.Y - mouse.Y) * (shp.pos.Y - mouse.Y);
-                if (ShapeColorObject.compareHues(shp.getColor().Hue, pcolor.Hue, 10))
+                if (ShapeColorObject.compareHues(shp.getColor().Hue, pcolor.Hue, dHue))
                 if ( temp == null || d < dist)
                 {
                     temp = shp;
-                    temp.image = listBox1.SelectedItem.ToString();
+                    temp.imIndex = listBox1.SelectedIndex;
                     dist = d;
                 }
             }
             if (temp != null && !chosenshapes.Contains(temp))
             {
+                temp.objIndex = chosenshapes.Count;
                 chosenshapes.Add(temp);
                 //trackedshapes.Add(temp);                
             }
@@ -212,9 +219,14 @@ namespace EmguCVRecognition
 
         private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
+            updateSelectedImage();
+        }
+
+        private void updateSelectedImage()
+        {
             im1.Image = LoadedImages[listBox1.SelectedItem.ToString()];
-            if(workImages.ContainsKey(listBox1.SelectedItem.ToString()))
-            im2.Image = workImages[listBox1.SelectedItem.ToString()];
+            if (workImages.ContainsKey(listBox1.SelectedItem.ToString()))
+                im2.Image = workImages[listBox1.SelectedItem.ToString()];
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -267,29 +279,29 @@ namespace EmguCVRecognition
                     {
                         
                         col = new Hsv(0, 255, 220);
-                        newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.triangle, refImg[meanY, meanX], meanX, meanY);
-                        newObj.image = "Image:"+index;
+                        newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.tri, refImg[meanY, meanX], meanX, meanY);
+                        newObj.imIndex = index;
                         funkshapes.Add(newObj);
                     }
                     else if (current.Total == 4 && current.Convex) //4 vertices convex
                     {
                         col = new Hsv(45, 255, 220);
-                        newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.rectangle, refImg[meanY, meanX], meanX, meanY);
-                        newObj.image = "Image:" + index;
+                        newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.rect, refImg[meanY, meanX], meanX, meanY);
+                        newObj.imIndex = index;
                         funkshapes.Add(newObj);
                     }
                     else if (current.Total > 8 && current.Convex) //8+ vertices (circle) convex
                     {
                         col = new Hsv(90, 255, 220);
                         newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.circle, refImg[meanY, meanX], meanX, meanY);
-                        newObj.image = "Image:" + index;
+                        newObj.imIndex = index;
                         funkshapes.Add(newObj);
                     }
                     else //other shapes
                     {
                         col = new Hsv(135, 255, 220);
-                        newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.undefined, refImg[meanY, meanX], meanX, meanY);
-                        newObj.image = "Image:" + index;
+                        newObj = new ShapeColorObject(current.Area, ShapeColorObject.shape.undef, refImg[meanY, meanX], meanX, meanY);
+                        newObj.imIndex = index;
                         funkshapes.Add(newObj);
                     }
 
@@ -322,7 +334,7 @@ namespace EmguCVRecognition
         /// <param name="dSaturation">Saettigungstoleranz</param>
         /// <param name="dValue">Helligeitstoleranz</param>
         /// <returns></returns>
-        private Emgu.CV.Image<Gray, byte> thresholdHSVtoGray(Emgu.CV.Image<Hsv, byte> inImg, Hsv pcolor, int dHue, int dSaturation, int dValue)
+        private Emgu.CV.Image<Gray, byte> thresholdHSVtoGray(Emgu.CV.Image<Hsv, byte> inImg, Hsv pcolor)
         {
             double lowH, lowS, lowV, highH, highS, highV;
             if (pcolor.Value < 15)
@@ -332,15 +344,28 @@ namespace EmguCVRecognition
             }
             else
             {
-                lowH = Math.Max(pcolor.Hue - dHue, 0);
+                lowH = pcolor.Hue - dHue;//Math.Max(pcolor.Hue - dHue, 0);
                 lowS = Math.Max(pcolor.Satuation - dSaturation, 0);
-                highH = Math.Min(pcolor.Hue + dHue, 179);
+                highH = pcolor.Hue + dHue; // Math.Min(pcolor.Hue + dHue, 179);
                 highS = Math.Min(pcolor.Satuation + dSaturation, 255);
             }
             
             lowV = Math.Max(pcolor.Value - dValue, 0);
             highV = Math.Min(pcolor.Value + dValue, 255);
-            Image<Gray, byte> gray = inImg.InRange(new Hsv(lowH, lowS, lowV), new Hsv(highH, highS, highV));
+
+            Image<Gray, byte> gray = new Image<Gray, byte>(inImg.Size);
+            if (highH >= 180)
+                highH -= 180;
+            if (lowH < 0) 
+                lowH += 180;
+            if (highH <= lowH)
+            {
+                Image<Gray, byte> gray1 = inImg.InRange(new Hsv(lowH, lowS, lowV), new Hsv(179, highS, highV));
+                Image<Gray, byte> gray2 = inImg.InRange(new Hsv(0, lowS, lowV), new Hsv(highH, highS, highV));
+                gray = gray1.Add(gray2);
+            }
+            else
+                gray = inImg.InRange(new Hsv(lowH, lowS, lowV), new Hsv(highH, highS, highV));
             //Bildverbesserung
             gray.SmoothMedian(mediansize);
 
@@ -407,7 +432,7 @@ namespace EmguCVRecognition
         /// <returns></returns>
         private List<ShapeColorObject> findSimilarShapeinPicture(ShapeColorObject template, Image<Hsv, byte> image, int index) {
             
-            Image<Gray, Byte> threshhImage = thresholdHSVtoGray(image, template.getColor(), 10, 20, 20);
+            Image<Gray, Byte> threshhImage = thresholdHSVtoGray(image, template.getColor());
             List<ShapeColorObject> samecoloredshapes = findShapesinGrayImg(threshhImage, image, index);
             List<ShapeColorObject> similar = new List<ShapeColorObject>();
 
@@ -433,7 +458,7 @@ namespace EmguCVRecognition
 
                 for (int j = 0; j < trackedshapes.Count; j++) {
                     
-                    if(trackedshapes.ElementAt(j).image.Equals("Image:"+(i-1))){
+                    if(trackedshapes.ElementAt(j).imIndex == i-1){
                         List<ShapeColorObject> templist = new List<ShapeColorObject>();
                         templist = findSimilarShapeinPicture(trackedshapes.ElementAt(j), LoadedImages["Image:" + i], i);
                         if (templist.Count != 0)
@@ -442,7 +467,9 @@ namespace EmguCVRecognition
                             //ShapeColorObject tempshape = templist.ElementAt(0);
                             tempshape.previousPosition = trackedshapes.ElementAt(j).pos;
                             tempshape.prev = trackedshapes.ElementAt(j);
-                            tempshape.image = "Image:"+i;
+                            tempshape.imIndex = i;
+                            tempshape.objIndex = tempshape.prev.objIndex;
+                            tempshape.type = tempshape.prev.type;
                             trackedshapes.Add(tempshape);
                         }
                     }
@@ -454,7 +481,7 @@ namespace EmguCVRecognition
                 Image<Hsv, byte> tempimage = LoadedImages["Image:" + i].Copy();
                 
                 for (int j = 0; j < trackedshapes.Count; j++) {
-                    if (trackedshapes.ElementAt(j).image.Equals("Image:" + i))
+                    if (trackedshapes.ElementAt(j).imIndex == i)
                     {
                         trackedshapes.ElementAt(j).drawOnImg(ref tempimage);
                         tempimage.Draw(new Cross2DF(trackedshapes.ElementAt(j).predictedPos(), 5, 5), new Hsv(29, 170, 255), 3);
@@ -499,7 +526,7 @@ namespace EmguCVRecognition
 
             foreach (ShapeColorObject s in trackedshapes)
             {
-                outImg.Draw(s.toString(), ref font, s.pos, new Hsv(0, 255, 255));
+                outImg.Draw(s.getLabel(), ref font, s.pos, new Hsv(0, 255, 255));
                 outImg.Draw(new Cross2DF(new PointF((float)s.pos.X, (float)s.pos.Y), (float)5.0, (float)5.0), new Hsv(0, 200, 200), 2);
             }
             im2.Image = outImg;
@@ -511,7 +538,143 @@ namespace EmguCVRecognition
             reset();
         }
 
-        
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            LoadedImages.Clear();
+            if (checkBox1.Checked)
+            {
+                try
+                {
+                    removeBackground();
+                }
+                catch (Exception) { }
+            }
+            else
+            {
+                foreach (KeyValuePair<string, Emgu.CV.Image<Bgr, byte>> kvp in cleanLoadedImages)
+                {
+                    LoadedImages.Add(kvp.Key, kvp.Value.Convert<Hsv, byte>().SmoothMedian(mediansize));
+                }
+            }
+            updateSelectedImage();
+        }
+
+        private void removeBackground()
+        {
+            Dictionary<string, Image<Bgr, byte>> bgrImages = new Dictionary<string, Image<Bgr, byte>>();
+
+            foreach (KeyValuePair<string, Emgu.CV.Image<Bgr, byte>> kvp in cleanLoadedImages)
+            {
+                bgrImages.Add(kvp.Key, (kvp.Value.SmoothGaussian(gaussiansize)));
+            }
+            LoadedImages = BackgroundSubtractor.getWithoutBackground(bgrImages);
+        }
+
+        private void trackBar1_Scroll(object sender, EventArgs e)
+        {
+            mediansize = 1 + 2*trackBar1.Value;
+            gaussiansize = 1 + 2*trackBar1.Value;
+            maskedTextBox1.Text = "" + mediansize;
+            reset();
+            LoadedImages.Clear();
+            workImages.Clear();
+
+            int index = listBox1.SelectedIndex;
+            //listBox1.Items.Clear();
+            if (checkBox1.Checked)
+                    removeBackground();
+            else
+                foreach (KeyValuePair<string, Emgu.CV.Image<Bgr, byte>> kvp in cleanLoadedImages)
+                {
+                    LoadedImages.Add(kvp.Key, kvp.Value.SmoothMedian(mediansize).Convert<Hsv, byte>());
+                    //listBox1.Items.Add(kvp.Key);
+                }
+            if (LoadedImages.Count > 0)
+            {
+                //listBox1.SelectedIndex = index;
+                updateSelectedImage();
+            }
+        }
+
+        private void trackBar2_Scroll(object sender, EventArgs e)
+        {
+            dHue = trackBar2.Value;
+            maskedTextBox2.Text = "" + dHue;
+        }
+
+        private void trackBar3_Scroll(object sender, EventArgs e)
+        {
+            dSaturation = trackBar3.Value;
+            maskedTextBox3.Text = "" + dSaturation;
+        }
+
+        private void trackBar4_Scroll(object sender, EventArgs e)
+        {
+            dValue = trackBar4.Value;
+            maskedTextBox4.Text = "" + dValue;
+        }
+
+        private void maskedTextBox1_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                int f = 1;
+                if (int.TryParse(maskedTextBox1.Text, out f))
+                {
+                    f = Math.Max(1, Math.Min(15, f));
+                    if (f % 2 == 0)
+                        f += 1;
+                    maskedTextBox1.Text = "" + f;
+                    trackBar1.Value = (f - 1) / 2;
+                    trackBar1_Scroll(sender, e);
+                }
+            }
+        }
+
+        private void maskedTextBox2_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                int f = 1;
+                if (int.TryParse(maskedTextBox2.Text, out f))
+                {
+                    f = Math.Max(0, Math.Min(90, f));
+                    maskedTextBox2.Text = "" + f;
+                    trackBar2.Value = f;
+                    trackBar2_Scroll(sender, e);
+                }
+            }
+        }
+
+        private void maskedTextBox3_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                int f = 1;
+                if (int.TryParse(maskedTextBox3.Text, out f))
+                {
+                    f = Math.Max(0, Math.Min(255, f));
+                    maskedTextBox3.Text = "" + f;
+                    trackBar3.Value = f;
+                    trackBar3_Scroll(sender, e);
+                }
+            }
+        }
+
+        private void maskedTextBox4_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                int f = 1;
+                if (int.TryParse(maskedTextBox4.Text, out f))
+                {
+                    f = Math.Max(0, Math.Min(255, f));
+                    maskedTextBox4.Text = "" + f;
+                    trackBar4.Value = f;
+                    trackBar4_Scroll(sender, e);
+                }
+            }
+        }
 
     }
 }
