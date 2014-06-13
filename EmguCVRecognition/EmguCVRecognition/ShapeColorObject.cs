@@ -10,7 +10,8 @@ namespace EmguCVRecognition
 {
   public  class ShapeColorObject: IEquatable<ShapeColorObject>
     {
-        public string image;
+        public int imIndex;
+        public int objIndex;
         public Point previousPosition;
         public List<LineSegment2D> lineSegments; 
         double area;
@@ -19,10 +20,10 @@ namespace EmguCVRecognition
         public float circularity;
         public enum shape
         {
-            triangle = 0,
-            rectangle = 45,
+            tri = 0,
+            rect = 45,
             circle = 90,
-            undefined = 145
+            undef = 145
         };
 
         private Hsv color;
@@ -56,6 +57,7 @@ namespace EmguCVRecognition
             lineSegments = new List<LineSegment2D>();
             previousPosition = pos;
             prev = this;
+            objIndex = 0;
         }
 
         public bool compare(ShapeColorObject shape2, int cTolerance, int aTolerance)
@@ -73,12 +75,12 @@ namespace EmguCVRecognition
 
         public bool Equals(ShapeColorObject shape2)
         {
-            return (this.pos == shape2.pos && this.color.Hue == shape2.color.Hue/* && this.type == shape2.type*/ && this.image == shape2.image);
+            return (this.pos == shape2.pos && this.color.Hue == shape2.color.Hue/* && this.type == shape2.type*/ && this.imIndex == shape2.imIndex);
         }
 
         public static bool compareHues(double h1, double h2, int tolerance)
         {
-            tolerance = Math.Min(Math.Max(tolerance, 0), 63);
+            tolerance = Math.Min(Math.Max(tolerance, 0), 90);
             double low = h2 - tolerance;
             double high = h2 + tolerance;
             bool result = false;
@@ -103,10 +105,18 @@ namespace EmguCVRecognition
 
         public string toString()
         {
-            string s = type.ToString();
+            string s = getLabel() + "\n  " + type.ToString();
             string a = (area >= 10000) ? (int)(area / 1000) + "k" : area + "";
-            s += " @(" + x + "; " + y + ")\n  area: " + a + "\n  hue: " + color.Hue;
+            s += " @(img" + imIndex + "; " + x + "; " + y + ")\n"
+              + "  color: " + color.ToString() + "\n"
+              + "  area: " + a + "\n"
+              + "  circularity: " + circularity + "\n";
             return s;
+        }
+
+        public string getLabel()
+        {
+            return "object " + objIndex;
         }
         
         public void drawOnImg(ref Emgu.CV.Image<Hsv,byte> img){
