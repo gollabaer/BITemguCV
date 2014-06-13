@@ -13,6 +13,7 @@ namespace EmguCVRecognition
     {
 
         public static int dilatationErosionNumIter = 10;
+        public static float backgroundRatio = 0.7f;
         
         public static Dictionary<string, Image<Hsv, byte>> getWithoutBackground(Dictionary<string, Image<Bgr, byte>> images) {
 
@@ -29,7 +30,7 @@ namespace EmguCVRecognition
             }
 
             //erstelle neuen backgroundsubtractor
-            Emgu.CV.VideoSurveillance.BackgroundSubtractorMOG subtractor = new Emgu.CV.VideoSurveillance.BackgroundSubtractorMOG(3,4,0.7,0.01 );
+            Emgu.CV.VideoSurveillance.BackgroundSubtractorMOG subtractor = new Emgu.CV.VideoSurveillance.BackgroundSubtractorMOG(3,4,backgroundRatio,0.01 );
 
         
             Image<Gray, byte> backgroundmodel = new Image<Gray,byte>(images["Image:"+0].Width,images["Image:" +0].Height);

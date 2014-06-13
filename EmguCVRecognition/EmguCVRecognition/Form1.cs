@@ -151,6 +151,7 @@ namespace EmguCVRecognition
 
         private void imageBox1_Click(object sender, EventArgs e)
         {
+            if (im1.Image == null) return;
             //--Get Mouseposition in Pixelcoordinates--------
             var mouseEventArgs = e as MouseEventArgs;
             int imWidth, imHeight, boxWidth, boxHeight;
@@ -540,6 +541,7 @@ namespace EmguCVRecognition
 
         private void checkBox1_CheckedChanged(object sender, EventArgs e)
         {
+            if (!imagesloaded) return;
             LoadedImages.Clear();
             if (checkBox1.Checked)
             {
@@ -675,6 +677,57 @@ namespace EmguCVRecognition
                 }
             }
         }
+
+      
+
+
+        private void maskedTextBox5_KeyDown(object sender, KeyEventArgs e)
+        {
+
+            if (e.KeyCode == Keys.Enter)
+            {
+                int f = 1;
+                if (int.TryParse(maskedTextBox5.Text, out f))
+                {
+                    f = Math.Max(0, Math.Min(40, f));
+                    maskedTextBox5.Text = "" + f;
+                    trackBar5.Value = f;
+                    trackBar5_Scroll(sender, e);
+                }
+            }
+        }
+
+        private void maskedTextBox6_KeyDown(object sender, KeyEventArgs e)
+        {
+
+            if (e.KeyCode == Keys.Enter)
+            {
+                int f = 1;
+                if (int.TryParse(maskedTextBox6.Text, out f))
+                {
+                    f = Math.Max(0, Math.Min(99, f));
+                    maskedTextBox6.Text = "" + f;
+                    trackBar6.Value = f;
+                    trackBar6_Scroll(sender, e);
+                }
+            }
+        }
+
+        private void trackBar6_Scroll(object sender, EventArgs e)
+        {
+            BackgroundSubtractor.backgroundRatio = (float)trackBar6.Value/ 100.0f;
+            maskedTextBox6.Text = "" + trackBar6.Value;
+
+        }
+
+        private void trackBar5_Scroll(object sender, EventArgs e)
+        {
+            BackgroundSubtractor.dilatationErosionNumIter = trackBar5.Value;
+            maskedTextBox5.Text = "" + BackgroundSubtractor.dilatationErosionNumIter;
+        }
+
+   
+      
 
     }
 }
