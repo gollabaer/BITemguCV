@@ -542,14 +542,13 @@ namespace EmguCVRecognition
         private void checkBox1_CheckedChanged(object sender, EventArgs e)
         {
             if (!imagesloaded) return;
+            //Dictionary<string, Emgu.CV.Image<Hsv, byte>> copy = LoadedImages;
+            reset();
             LoadedImages.Clear();
+            workImages.Clear();
             if (checkBox1.Checked)
             {
-                try
-                {
-                    removeBackground();
-                }
-                catch (Exception) { }
+                removeBackground();
             }
             else
             {
@@ -570,6 +569,17 @@ namespace EmguCVRecognition
                 bgrImages.Add(kvp.Key, (kvp.Value.SmoothGaussian(gaussiansize)));
             }
             LoadedImages = BackgroundSubtractor.getWithoutBackground(bgrImages);
+
+            if (BackgroundSubtractor.exception)
+            {
+                foreach (KeyValuePair<string, Emgu.CV.Image<Bgr, byte>> kvp in cleanLoadedImages)
+                {
+                    LoadedImages.Clear();
+                    LoadedImages.Add(kvp.Key, kvp.Value.SmoothMedian(mediansize).Convert<Hsv, byte>());
+                }
+                checkBox1.Checked = false;
+                BackgroundSubtractor.exception = false;
+            }
         }
 
         private void trackBar1_Scroll(object sender, EventArgs e)
@@ -718,16 +728,25 @@ namespace EmguCVRecognition
             BackgroundSubtractor.backgroundRatio = (float)trackBar6.Value/ 100.0f;
             maskedTextBox6.Text = "" + trackBar6.Value;
 
+            if (checkBox1.Checked)
+            {
+                LoadedImages.Clear();
+                removeBackground();
+                updateSelectedImage();
+            }
         }
 
         private void trackBar5_Scroll(object sender, EventArgs e)
         {
             BackgroundSubtractor.dilatationErosionNumIter = trackBar5.Value;
             maskedTextBox5.Text = "" + BackgroundSubtractor.dilatationErosionNumIter;
+            if (checkBox1.Checked)
+            {
+                LoadedImages.Clear();
+                removeBackground();
+                updateSelectedImage();
+            }
         }
-
-   
-      
 
     }
 }

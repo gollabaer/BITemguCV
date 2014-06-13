@@ -352,9 +352,8 @@
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(580, 292);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(43, 13);
+            this.label1.Size = new System.Drawing.Size(0, 13);
             this.label1.TabIndex = 5;
-            this.label1.Text = "position";
             // 
             // label10
             // 
@@ -368,6 +367,7 @@
             // trackBar5
             // 
             this.trackBar5.AutoSize = false;
+            this.trackBar5.Enabled = false;
             this.trackBar5.LargeChange = 10;
             this.trackBar5.Location = new System.Drawing.Point(12, 589);
             this.trackBar5.Maximum = 40;
@@ -406,6 +406,7 @@
             // trackBar6
             // 
             this.trackBar6.AutoSize = false;
+            this.trackBar6.Enabled = false;
             this.trackBar6.LargeChange = 10;
             this.trackBar6.Location = new System.Drawing.Point(15, 639);
             this.trackBar6.Maximum = 99;
