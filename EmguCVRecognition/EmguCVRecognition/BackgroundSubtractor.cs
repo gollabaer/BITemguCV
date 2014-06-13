@@ -11,8 +11,12 @@ namespace EmguCVRecognition
 {
     class BackgroundSubtractor
     {
+
+        public static int dilatationErosionNumIter = 10;
         
         public static Dictionary<string, Image<Hsv, byte>> getWithoutBackground(Dictionary<string, Image<Bgr, byte>> images) {
+
+            
 
             VideoWriter videoW = new VideoWriter("test.avi", 30, images["Image:0"].Width, images["Image:0"].Height, true);
             
@@ -37,6 +41,8 @@ namespace EmguCVRecognition
                 subtractor.Update(images[key]);
                 backgroundmodel = subtractor.ForegroundMask;
                 backgroundmodel = backgroundmodel.Mul(1.0 / 255.0);
+                backgroundmodel._Dilate(dilatationErosionNumIter);
+                backgroundmodel._Erode(dilatationErosionNumIter);
 
                 bgrOhneHintergrund[0] = images[key][0].Mul(backgroundmodel);
                 bgrOhneHintergrund[1] = images[key][1].Mul(backgroundmodel);
