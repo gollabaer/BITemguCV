@@ -165,7 +165,7 @@ namespace EmguCVRecognition
             
             Emgu.CV.Image<Hsv, byte> original = LoadedImages[listBox1.SelectedItem.ToString()];
             Hsv pcolor = original[y, x];
-            if (mouseEventArgs != null) label1.Text = "X= " + x + " Y= " + y+ " Color=" + pcolor.Hue + " ;"+ + pcolor.Satuation + " ;"+ pcolor.Value ;
+            if (mouseEventArgs != null) label1.Text = "@(" + x + "; " + y+ "): " + pcolor.ToString() ;
             Emgu.CV.Image<Gray, byte> threshedimage;
             threshedimage = thresholdHSVtoGray(original, pcolor);
             imageBox2.Image = threshedimage;
