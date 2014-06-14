@@ -17,7 +17,7 @@ namespace EmguCVRecognition
 {
     public partial class Form1 : Form
     {
-        //-Variables------------------------------------------
+        #region variables
         bool imagesloaded = false;
         public Dictionary<string, Emgu.CV.Image<Hsv,Byte>> LoadedImages = new Dictionary<string,Emgu.CV.Image<Hsv,Byte>>();
         public Dictionary<string, Emgu.CV.Image<Bgr, Byte>> cleanLoadedImages = new Dictionary<string, Emgu.CV.Image<Bgr, Byte>>();
@@ -32,40 +32,29 @@ namespace EmguCVRecognition
         List<ShapeColorObject> shapes;
         List<ShapeColorObject> trackedshapes;
         List<ShapeColorObject> chosenshapes;
+        #endregion
 
-        //----------------------------------------------------
-        //Parameter
+        #region parameters
         int mediansize = 1;
         int gaussiansize = 1;
         int dHue = 10;
         int dSaturation = 20;
         int dValue = 20;
-
-        //------------------------------------------------
+        #endregion
 
         public Form1()
         {
             InitializeComponent();
 
-            this.MouseClick += new MouseEventHandler(myForm_MouseClick);
             im1 = imageBox1;
             im2 = imageBox2;
             shapes = new List<ShapeColorObject>();
             trackedshapes = new List<ShapeColorObject>();
             chosenshapes = new List<ShapeColorObject>();
-            im1.SizeMode = PictureBoxSizeMode.Zoom;
-            im2.SizeMode = PictureBoxSizeMode.Zoom;
+            //im1.SizeMode = PictureBoxSizeMode.Zoom;
+            //im2.SizeMode = PictureBoxSizeMode.Zoom;
             listBox1.MultiColumn = true;
             font = new MCvFont(Emgu.CV.CvEnum.FONT.CV_FONT_HERSHEY_PLAIN,1, 1);
-        }
-
-        void myForm_MouseClick(object sender, MouseEventArgs e)
-        {
-        }
-
-        private void Form1_Load(object sender, EventArgs e)
-        {
-          
         }
 
         private void reset()
@@ -76,169 +65,12 @@ namespace EmguCVRecognition
             label3.Text = "no shapes tracked";
         }
 
-        private void button1_Click(object sender, EventArgs e)
-        {
-            Dictionary<string, Image<Bgr, byte>> bgrImages = new Dictionary<string, Image<Bgr, byte>>();
-
-            //--Initialize openFiledialogue---
-            OpenFileDialog openFileDialog1 = new OpenFileDialog();
-            openFileDialog1.Filter = "Images (*.BMP;*.JPG;*.GIF;*.PNG)|*.BMP;*.JPG;*.GIF;*.PNG";
-            openFileDialog1.FilterIndex = 1;
-            openFileDialog1.RestoreDirectory = true;
-            openFileDialog1.Title = "Image Selection";
-            openFileDialog1.Multiselect = true;
-            //--------------------------------
-
-            DialogResult dialogresult = openFileDialog1.ShowDialog();
-
-            //---Save Images in Dictionary and display in ListBox----
-            if (dialogresult == System.Windows.Forms.DialogResult.OK)
-            {
-                if (imagesloaded)
-                {
-                    //reset and clear everything if images were loaded before
-                    reset();
-                    cleanLoadedImages.Clear();
-                    LoadedImages.Clear();
-                    workImages.Clear();
-                    listBox1.Items.Clear();
-                    //listBox1.Update();
-                }
-
-                int currentImage = 0;
-                // Read the files
-                listBox1.BeginUpdate();
-                foreach (String file in openFileDialog1.FileNames)
-                {
-                    // Create a PictureBox.
-                    try
-                    {
-                        //Convert Images to Emgu Format
-                        Image tempImage = Image.FromFile(file);
-                        Bitmap tempBitmap = new Bitmap(tempImage);
-                        Emgu.CV.Image<Bgr, byte> cleanImage = new Emgu.CV.Image<Bgr, byte>(tempBitmap);
-                        Emgu.CV.Image<Hsv,Byte> loadedImage = new Emgu.CV.Image<Hsv, byte>(tempBitmap);
-                        string loadedImageName = "Image:"+currentImage;
-                        //Save Images
-                        listBox1.Items.Add(loadedImageName);
-                        cleanLoadedImages.Add(loadedImageName, cleanImage);
-                        LoadedImages.Add(loadedImageName, loadedImage.SmoothMedian(mediansize) );
-                        if(checkBox1.Checked)
-                            bgrImages.Add(loadedImageName, cleanImage.SmoothGaussian(gaussiansize));
-                       
-                    }
-
-                    catch (Exception ex)
-                    {
-                        // Could not load the image - probably related to Windows file system permissions.
-                        MessageBox.Show("Cannot load the image: " + file.Substring(file.LastIndexOf('\\'))
-                            + ".\n\n" + ex.Message);
-                    }
-                    currentImage++;
-                }
-                listBox1.EndUpdate();
-                imagesloaded = true;
-
-                if (checkBox1.Checked) {
-                    LoadedImages = BackgroundSubtractor.getWithoutBackground(bgrImages);
-                }
-                listBox1.SelectedIndex = 0;
-            }
-            //----------------------------------------
-            
-            
-        }
-
-        private void imageBox1_Click(object sender, EventArgs e)
-        {
-            if (im1.Image == null) return;
-            //--Get Mouseposition in Pixelcoordinates--------
-            var mouseEventArgs = e as MouseEventArgs;
-            int imWidth, imHeight, boxWidth, boxHeight;
-            imWidth = im1.Image.Size.Width;
-            imHeight = im1.Image.Size.Height;
-            boxWidth = im1.Size.Width;
-            boxHeight = im1.Size.Height;
-            Point mouse = TranslateZoomMousePosition(mouseEventArgs.X, mouseEventArgs.Y, imWidth, imHeight, boxWidth, boxHeight);
-            int x = mouse.X;//(int)(mouseEventArgs.X / im1.ZoomScale);
-            int y = mouse.Y;//(int)(mouseEventArgs.Y / im1.ZoomScale);
-
-            
-            Emgu.CV.Image<Hsv, byte> original = LoadedImages[listBox1.SelectedItem.ToString()];
-            Hsv pcolor = original[y, x];
-            if (mouseEventArgs != null) label1.Text = "@(" + x + "; " + y+ "): " + pcolor.ToString() ;
-            Emgu.CV.Image<Gray, byte> threshedimage;
-            threshedimage = thresholdHSVtoGray(original, pcolor);
-            imageBox2.Image = threshedimage;
-
-            //
-            ///-----CODE VON BUTTON3CLICK
-            //
-
-            shapes.Clear();
-            Emgu.CV.Image<Hsv, byte> refImg = (Emgu.CV.Image<Hsv, byte>)im1.Image;
-            Emgu.CV.Image<Gray, byte> inImg = (Emgu.CV.Image<Gray, byte>)im2.Image;
-            Emgu.CV.Image<Hsv, byte> outImg = inImg.Convert<Hsv, byte>();
-
-            shapes.AddRange(findShapesinGrayImg(inImg, refImg, listBox1.SelectedIndex));
-
-            //--Find closest shape---------
-            ShapeColorObject temp = null;
-            int dist = 0;
-            foreach (ShapeColorObject shp in shapes)
-            {
-                int d = (shp.pos.X - mouse.X) * (shp.pos.X - mouse.X) + (shp.pos.Y - mouse.Y) * (shp.pos.Y - mouse.Y);
-                if (ShapeColorObject.compareHues(shp.getColor().Hue, pcolor.Hue, dHue))
-                if ( temp == null || d < dist)
-                {
-                    temp = shp;
-                    temp.imIndex = listBox1.SelectedIndex;
-                    dist = d;
-                }
-            }
-            if (temp != null && !chosenshapes.Contains(temp))
-            {
-                temp.objIndex = chosenshapes.Count;
-                chosenshapes.Add(temp);
-                //trackedshapes.Add(temp);                
-            }
-
-            foreach (ShapeColorObject shp in chosenshapes)
-            {
-                shp.drawOnImg(ref outImg);
-                im2.Image = outImg;
-                im2.Update();
-            }
-
-            label2.Text = "";
-            foreach (ShapeColorObject shape in chosenshapes)
-                label2.Text += shape.toString() + "\n";
-            //
-            ///-CODE VON BUTTON3--ENDE----
-            //
-        }
-
-        private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            updateSelectedImage();
-        }
-
         private void updateSelectedImage()
         {
             im1.Image = LoadedImages[listBox1.SelectedItem.ToString()];
             if (workImages.ContainsKey(listBox1.SelectedItem.ToString()))
                 im2.Image = workImages[listBox1.SelectedItem.ToString()];
         }
-
-        private void button3_Click(object sender, EventArgs e)
-        {
-            searchOverImages();
-            label3.Text = "";
-            foreach (ShapeColorObject shape in trackedshapes)
-                label3.Text += shape.toString() + "\n";
-        }
-
-
 
         /// <summary>
         /// Returns a List of Shapes found in the gray Image and returns Linesegments and color of shape
@@ -517,49 +349,6 @@ namespace EmguCVRecognition
             }
         }
 
-        private void button4_Click(object sender, EventArgs e)
-        {
-            Emgu.CV.Image<Hsv, byte> outImg = (Emgu.CV.Image<Hsv, byte>)im2.Image;
-            foreach (ShapeColorObject shp in trackedshapes)
-            {
-                shp.drawOnImg(ref outImg);
-            }
-
-            foreach (ShapeColorObject s in trackedshapes)
-            {
-                outImg.Draw(s.getLabel(), ref font, s.pos, new Hsv(0, 255, 255));
-                outImg.Draw(new Cross2DF(new PointF((float)s.pos.X, (float)s.pos.Y), (float)5.0, (float)5.0), new Hsv(0, 200, 200), 2);
-            }
-            im2.Image = outImg;
-            im2.Update();
-        }
-
-        private void button2_Click(object sender, EventArgs e)
-        {
-            reset();
-        }
-
-        private void checkBox1_CheckedChanged(object sender, EventArgs e)
-        {
-            if (!imagesloaded) return;
-            //Dictionary<string, Emgu.CV.Image<Hsv, byte>> copy = LoadedImages;
-            reset();
-            LoadedImages.Clear();
-            workImages.Clear();
-            if (checkBox1.Checked)
-            {
-                removeBackground();
-            }
-            else
-            {
-                foreach (KeyValuePair<string, Emgu.CV.Image<Bgr, byte>> kvp in cleanLoadedImages)
-                {
-                    LoadedImages.Add(kvp.Key, kvp.Value.Convert<Hsv, byte>().SmoothMedian(mediansize));
-                }
-            }
-            updateSelectedImage();
-        }
-
         private void removeBackground()
         {
             Dictionary<string, Image<Bgr, byte>> bgrImages = new Dictionary<string, Image<Bgr, byte>>();
@@ -582,30 +371,204 @@ namespace EmguCVRecognition
             }
         }
 
+        #region button clicks
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Dictionary<string, Image<Bgr, byte>> bgrImages = new Dictionary<string, Image<Bgr, byte>>();
+
+            //--Initialize openFiledialogue---
+            OpenFileDialog openFileDialog1 = new OpenFileDialog();
+            openFileDialog1.Filter = "Images (*.BMP;*.JPG;*.GIF;*.PNG)|*.BMP;*.JPG;*.GIF;*.PNG";
+            openFileDialog1.FilterIndex = 1;
+            openFileDialog1.RestoreDirectory = true;
+            openFileDialog1.Title = "Image Selection";
+            openFileDialog1.Multiselect = true;
+            //--------------------------------
+
+            DialogResult dialogresult = openFileDialog1.ShowDialog();
+
+            //---Save Images in Dictionary and display in ListBox----
+            if (dialogresult == System.Windows.Forms.DialogResult.OK)
+            {
+                if (imagesloaded)
+                {
+                    //reset and clear everything if images were loaded before
+                    reset();
+                    cleanLoadedImages.Clear();
+                    LoadedImages.Clear();
+                    workImages.Clear();
+                    listBox1.Items.Clear();
+                    //listBox1.Update();
+                }
+
+                int currentImage = 0;
+                // Read the files
+                listBox1.BeginUpdate();
+                foreach (String file in openFileDialog1.FileNames)
+                {
+                    // Create a PictureBox.
+                    try
+                    {
+                        //Convert Images to Emgu Format
+                        Image tempImage = Image.FromFile(file);
+                        Bitmap tempBitmap = new Bitmap(tempImage);
+                        Emgu.CV.Image<Bgr, byte> cleanImage = new Emgu.CV.Image<Bgr, byte>(tempBitmap);
+                        Emgu.CV.Image<Hsv, Byte> loadedImage = new Emgu.CV.Image<Hsv, byte>(tempBitmap);
+                        string loadedImageName = "Image:" + currentImage;
+                        //Save Images
+                        listBox1.Items.Add(loadedImageName);
+                        cleanLoadedImages.Add(loadedImageName, cleanImage);
+                        LoadedImages.Add(loadedImageName, loadedImage.SmoothMedian(mediansize));
+                        if (checkBox1.Checked)
+                            bgrImages.Add(loadedImageName, cleanImage.SmoothGaussian(gaussiansize));
+
+                    }
+
+                    catch (Exception ex)
+                    {
+                        // Could not load the image - probably related to Windows file system permissions.
+                        MessageBox.Show("Cannot load the image: " + file.Substring(file.LastIndexOf('\\'))
+                            + ".\n\n" + ex.Message);
+                    }
+                    currentImage++;
+                }
+                listBox1.EndUpdate();
+                imagesloaded = true;
+
+                if (checkBox1.Checked)
+                {
+                    LoadedImages = BackgroundSubtractor.getWithoutBackground(bgrImages);
+                }
+                listBox1.SelectedIndex = 0;
+            }
+            //----------------------------------------
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            reset();
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            searchOverImages();
+            label3.Text = "";
+            foreach (ShapeColorObject shape in trackedshapes)
+                label3.Text += shape.toString() + "\n";
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            Emgu.CV.Image<Hsv, byte> outImg = (Emgu.CV.Image<Hsv, byte>)im2.Image;
+            foreach (ShapeColorObject shp in trackedshapes)
+            {
+                shp.drawOnImg(ref outImg);
+            }
+
+            foreach (ShapeColorObject s in trackedshapes)
+            {
+                outImg.Draw(s.getLabel(), ref font, s.pos, new Hsv(0, 255, 255));
+                outImg.Draw(new Cross2DF(new PointF((float)s.pos.X, (float)s.pos.Y), (float)5.0, (float)5.0), new Hsv(0, 200, 200), 2);
+            }
+            im2.Image = outImg;
+            im2.Update();
+        }
+        #endregion
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!imagesloaded) return;
+            //Dictionary<string, Emgu.CV.Image<Hsv, byte>> copy = LoadedImages;
+            reset();
+            LoadedImages.Clear();
+            workImages.Clear();
+            if (checkBox1.Checked)
+            {
+                removeBackground();
+            }
+            else
+            {
+                foreach (KeyValuePair<string, Emgu.CV.Image<Bgr, byte>> kvp in cleanLoadedImages)
+                {
+                    LoadedImages.Add(kvp.Key, kvp.Value.Convert<Hsv, byte>().SmoothMedian(mediansize));
+                }
+            }
+            updateSelectedImage();
+        }
+
+        private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            updateSelectedImage();
+        }
+
+        private void imageBox1_Click(object sender, EventArgs e)
+        {
+            if (im1.Image == null) return;
+            //--Get Mouseposition in Pixelcoordinates--------
+            var mouseEventArgs = e as MouseEventArgs;
+            int imWidth, imHeight, boxWidth, boxHeight;
+            imWidth = im1.Image.Size.Width;
+            imHeight = im1.Image.Size.Height;
+            boxWidth = im1.Size.Width;
+            boxHeight = im1.Size.Height;
+            Point mouse = TranslateZoomMousePosition(mouseEventArgs.X, mouseEventArgs.Y, imWidth, imHeight, boxWidth, boxHeight);
+            int x = mouse.X;//(int)(mouseEventArgs.X / im1.ZoomScale);
+            int y = mouse.Y;//(int)(mouseEventArgs.Y / im1.ZoomScale);
+
+
+            Emgu.CV.Image<Hsv, byte> original = LoadedImages[listBox1.SelectedItem.ToString()];
+            Hsv pcolor = original[y, x];
+            if (mouseEventArgs != null) label1.Text = "@(" + x + "; " + y + "): " + pcolor.ToString();
+            Emgu.CV.Image<Gray, byte> threshedimage;
+            threshedimage = thresholdHSVtoGray(original, pcolor);
+            imageBox2.Image = threshedimage;
+
+            shapes.Clear();
+            Emgu.CV.Image<Hsv, byte> refImg = (Emgu.CV.Image<Hsv, byte>)im1.Image;
+            Emgu.CV.Image<Gray, byte> inImg = (Emgu.CV.Image<Gray, byte>)im2.Image;
+            Emgu.CV.Image<Hsv, byte> outImg = inImg.Convert<Hsv, byte>();
+
+            shapes.AddRange(findShapesinGrayImg(inImg, refImg, listBox1.SelectedIndex));
+
+            //--Find closest shape---------
+            ShapeColorObject temp = null;
+            int dist = 0;
+            foreach (ShapeColorObject shp in shapes)
+            {
+                int d = (shp.pos.X - mouse.X) * (shp.pos.X - mouse.X) + (shp.pos.Y - mouse.Y) * (shp.pos.Y - mouse.Y);
+                if (ShapeColorObject.compareHues(shp.getColor().Hue, pcolor.Hue, dHue))
+                    if (temp == null || d < dist)
+                    {
+                        temp = shp;
+                        temp.imIndex = listBox1.SelectedIndex;
+                        dist = d;
+                    }
+            }
+            if (temp != null && !chosenshapes.Contains(temp))
+            {
+                temp.objIndex = chosenshapes.Count;
+                chosenshapes.Add(temp);
+                //trackedshapes.Add(temp);                
+            }
+
+            foreach (ShapeColorObject shp in chosenshapes)
+            {
+                shp.drawOnImg(ref outImg);
+                im2.Image = outImg;
+                im2.Update();
+            }
+
+            label2.Text = "";
+            foreach (ShapeColorObject shape in chosenshapes)
+                label2.Text += shape.toString() + "\n";
+        }
+
+        #region trackbars
         private void trackBar1_Scroll(object sender, EventArgs e)
         {
             mediansize = 1 + 2*trackBar1.Value;
             gaussiansize = 1 + 2*trackBar1.Value;
             maskedTextBox1.Text = "" + mediansize;
-            reset();
-            LoadedImages.Clear();
-            workImages.Clear();
-
-            int index = listBox1.SelectedIndex;
-            //listBox1.Items.Clear();
-            if (checkBox1.Checked)
-                    removeBackground();
-            else
-                foreach (KeyValuePair<string, Emgu.CV.Image<Bgr, byte>> kvp in cleanLoadedImages)
-                {
-                    LoadedImages.Add(kvp.Key, kvp.Value.SmoothMedian(mediansize).Convert<Hsv, byte>());
-                    //listBox1.Items.Add(kvp.Key);
-                }
-            if (LoadedImages.Count > 0)
-            {
-                //listBox1.SelectedIndex = index;
-                updateSelectedImage();
-            }
         }
 
         private void trackBar2_Scroll(object sender, EventArgs e)
@@ -626,6 +589,20 @@ namespace EmguCVRecognition
             maskedTextBox4.Text = "" + dValue;
         }
 
+        private void trackBar5_Scroll(object sender, EventArgs e)
+        {
+            BackgroundSubtractor.dilatationErosionNumIter = trackBar5.Value;
+            maskedTextBox5.Text = "" + BackgroundSubtractor.dilatationErosionNumIter;
+        }
+
+        private void trackBar6_Scroll(object sender, EventArgs e)
+        {
+            BackgroundSubtractor.backgroundRatio = (float)trackBar6.Value / 100.0f;
+            maskedTextBox6.Text = "" + trackBar6.Value;
+        }
+#endregion
+
+        #region masked texboxes
         private void maskedTextBox1_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
@@ -688,9 +665,6 @@ namespace EmguCVRecognition
             }
         }
 
-      
-
-
         private void maskedTextBox5_KeyDown(object sender, KeyEventArgs e)
         {
 
@@ -722,31 +696,28 @@ namespace EmguCVRecognition
                 }
             }
         }
+        #endregion
 
-        private void trackBar6_Scroll(object sender, EventArgs e)
+        private void button5_Click(object sender, EventArgs e)
         {
-            BackgroundSubtractor.backgroundRatio = (float)trackBar6.Value/ 100.0f;
-            maskedTextBox6.Text = "" + trackBar6.Value;
+            if (LoadedImages.Count == 0) return;
+            reset();
+            LoadedImages.Clear();
+            workImages.Clear();
 
+            int index = listBox1.SelectedIndex;
             if (checkBox1.Checked)
             {
-                LoadedImages.Clear();
                 removeBackground();
-                updateSelectedImage();
             }
-        }
-
-        private void trackBar5_Scroll(object sender, EventArgs e)
-        {
-            BackgroundSubtractor.dilatationErosionNumIter = trackBar5.Value;
-            maskedTextBox5.Text = "" + BackgroundSubtractor.dilatationErosionNumIter;
-            if (checkBox1.Checked)
+            else
             {
-                LoadedImages.Clear();
-                removeBackground();
-                updateSelectedImage();
+                foreach (KeyValuePair<string, Emgu.CV.Image<Bgr, byte>> kvp in cleanLoadedImages)
+                {
+                    LoadedImages.Add(kvp.Key, kvp.Value.SmoothMedian(mediansize).Convert<Hsv, byte>());
+                }
             }
+            updateSelectedImage();
         }
-
     }
 }

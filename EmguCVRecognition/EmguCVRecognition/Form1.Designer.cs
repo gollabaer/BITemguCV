@@ -62,6 +62,9 @@
             this.maskedTextBox6 = new System.Windows.Forms.MaskedTextBox();
             this.trackBar6 = new System.Windows.Forms.TrackBar();
             this.label11 = new System.Windows.Forms.Label();
+            this.button5 = new System.Windows.Forms.Button();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.groupBox2 = new System.Windows.Forms.GroupBox();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox2)).BeginInit();
             this.panel1.SuspendLayout();
@@ -72,6 +75,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.trackBar4)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBar5)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBar6)).BeginInit();
+            this.groupBox1.SuspendLayout();
+            this.groupBox2.SuspendLayout();
             this.SuspendLayout();
             // 
             // button1
@@ -86,20 +91,22 @@
             // 
             // imageBox1
             // 
-            this.imageBox1.Location = new System.Drawing.Point(580, 12);
+            this.imageBox1.FunctionalMode = Emgu.CV.UI.ImageBox.FunctionalModeOption.Minimum;
+            this.imageBox1.Location = new System.Drawing.Point(586, 48);
             this.imageBox1.Name = "imageBox1";
-            this.imageBox1.Size = new System.Drawing.Size(480, 272);
-            this.imageBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
+            this.imageBox1.Size = new System.Drawing.Size(546, 300);
+            this.imageBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.imageBox1.TabIndex = 2;
             this.imageBox1.TabStop = false;
             this.imageBox1.Click += new System.EventHandler(this.imageBox1_Click);
             // 
             // imageBox2
             // 
-            this.imageBox2.Location = new System.Drawing.Point(580, 340);
+            this.imageBox2.FunctionalMode = Emgu.CV.UI.ImageBox.FunctionalModeOption.Minimum;
+            this.imageBox2.Location = new System.Drawing.Point(583, 406);
             this.imageBox2.Name = "imageBox2";
-            this.imageBox2.Size = new System.Drawing.Size(480, 272);
-            this.imageBox2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
+            this.imageBox2.Size = new System.Drawing.Size(546, 300);
+            this.imageBox2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.imageBox2.TabIndex = 2;
             this.imageBox2.TabStop = false;
             // 
@@ -178,7 +185,7 @@
             this.panel1.Controls.Add(this.label2);
             this.panel1.Location = new System.Drawing.Point(147, 48);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(203, 564);
+            this.panel1.Size = new System.Drawing.Size(203, 658);
             this.panel1.TabIndex = 12;
             // 
             // panel2
@@ -188,7 +195,7 @@
             this.panel2.Controls.Add(this.label3);
             this.panel2.Location = new System.Drawing.Point(371, 48);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(203, 564);
+            this.panel2.Size = new System.Drawing.Size(203, 658);
             this.panel2.TabIndex = 13;
             // 
             // label4
@@ -213,10 +220,10 @@
             // 
             this.trackBar1.AutoSize = false;
             this.trackBar1.LargeChange = 2;
-            this.trackBar1.Location = new System.Drawing.Point(12, 389);
+            this.trackBar1.Location = new System.Drawing.Point(9, 35);
             this.trackBar1.Maximum = 7;
             this.trackBar1.Name = "trackBar1";
-            this.trackBar1.Size = new System.Drawing.Size(126, 20);
+            this.trackBar1.Size = new System.Drawing.Size(111, 20);
             this.trackBar1.TabIndex = 16;
             this.trackBar1.Tag = "";
             this.trackBar1.Scroll += new System.EventHandler(this.trackBar1_Scroll);
@@ -224,7 +231,7 @@
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(12, 373);
+            this.label6.Location = new System.Drawing.Point(9, 19);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(79, 13);
             this.label6.TabIndex = 17;
@@ -233,7 +240,7 @@
             // label7
             // 
             this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(12, 421);
+            this.label7.Location = new System.Drawing.Point(9, 16);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(72, 13);
             this.label7.TabIndex = 19;
@@ -243,10 +250,10 @@
             // 
             this.trackBar2.AutoSize = false;
             this.trackBar2.LargeChange = 20;
-            this.trackBar2.Location = new System.Drawing.Point(12, 437);
+            this.trackBar2.Location = new System.Drawing.Point(9, 32);
             this.trackBar2.Maximum = 90;
             this.trackBar2.Name = "trackBar2";
-            this.trackBar2.Size = new System.Drawing.Size(126, 20);
+            this.trackBar2.Size = new System.Drawing.Size(111, 20);
             this.trackBar2.TabIndex = 18;
             this.trackBar2.Tag = "";
             this.trackBar2.TickFrequency = 10;
@@ -256,7 +263,7 @@
             // label8
             // 
             this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(12, 467);
+            this.label8.Location = new System.Drawing.Point(9, 62);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(68, 13);
             this.label8.TabIndex = 21;
@@ -266,10 +273,10 @@
             // 
             this.trackBar3.AutoSize = false;
             this.trackBar3.LargeChange = 50;
-            this.trackBar3.Location = new System.Drawing.Point(12, 483);
+            this.trackBar3.Location = new System.Drawing.Point(9, 79);
             this.trackBar3.Maximum = 255;
             this.trackBar3.Name = "trackBar3";
-            this.trackBar3.Size = new System.Drawing.Size(126, 20);
+            this.trackBar3.Size = new System.Drawing.Size(111, 20);
             this.trackBar3.TabIndex = 20;
             this.trackBar3.Tag = "";
             this.trackBar3.TickFrequency = 20;
@@ -279,7 +286,7 @@
             // label9
             // 
             this.label9.AutoSize = true;
-            this.label9.Location = new System.Drawing.Point(12, 517);
+            this.label9.Location = new System.Drawing.Point(9, 112);
             this.label9.Name = "label9";
             this.label9.Size = new System.Drawing.Size(68, 13);
             this.label9.TabIndex = 23;
@@ -289,10 +296,10 @@
             // 
             this.trackBar4.AutoSize = false;
             this.trackBar4.LargeChange = 50;
-            this.trackBar4.Location = new System.Drawing.Point(12, 533);
+            this.trackBar4.Location = new System.Drawing.Point(9, 128);
             this.trackBar4.Maximum = 255;
             this.trackBar4.Name = "trackBar4";
-            this.trackBar4.Size = new System.Drawing.Size(126, 20);
+            this.trackBar4.Size = new System.Drawing.Size(111, 20);
             this.trackBar4.TabIndex = 22;
             this.trackBar4.Tag = "";
             this.trackBar4.TickFrequency = 20;
@@ -301,11 +308,11 @@
             // 
             // maskedTextBox1
             // 
-            this.maskedTextBox1.Location = new System.Drawing.Point(97, 366);
+            this.maskedTextBox1.Location = new System.Drawing.Point(90, 12);
             this.maskedTextBox1.Mask = "##";
             this.maskedTextBox1.Name = "maskedTextBox1";
             this.maskedTextBox1.PromptChar = ' ';
-            this.maskedTextBox1.Size = new System.Drawing.Size(39, 20);
+            this.maskedTextBox1.Size = new System.Drawing.Size(30, 20);
             this.maskedTextBox1.TabIndex = 28;
             this.maskedTextBox1.Text = "1";
             this.maskedTextBox1.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
@@ -313,11 +320,11 @@
             // 
             // maskedTextBox2
             // 
-            this.maskedTextBox2.Location = new System.Drawing.Point(97, 414);
+            this.maskedTextBox2.Location = new System.Drawing.Point(90, 9);
             this.maskedTextBox2.Mask = "##";
             this.maskedTextBox2.Name = "maskedTextBox2";
             this.maskedTextBox2.PromptChar = ' ';
-            this.maskedTextBox2.Size = new System.Drawing.Size(39, 20);
+            this.maskedTextBox2.Size = new System.Drawing.Size(30, 20);
             this.maskedTextBox2.TabIndex = 29;
             this.maskedTextBox2.Text = "10";
             this.maskedTextBox2.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
@@ -325,11 +332,11 @@
             // 
             // maskedTextBox3
             // 
-            this.maskedTextBox3.Location = new System.Drawing.Point(97, 460);
+            this.maskedTextBox3.Location = new System.Drawing.Point(90, 55);
             this.maskedTextBox3.Mask = "###";
             this.maskedTextBox3.Name = "maskedTextBox3";
             this.maskedTextBox3.PromptChar = ' ';
-            this.maskedTextBox3.Size = new System.Drawing.Size(39, 20);
+            this.maskedTextBox3.Size = new System.Drawing.Size(30, 20);
             this.maskedTextBox3.TabIndex = 30;
             this.maskedTextBox3.Text = "20";
             this.maskedTextBox3.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
@@ -337,11 +344,11 @@
             // 
             // maskedTextBox4
             // 
-            this.maskedTextBox4.Location = new System.Drawing.Point(97, 510);
+            this.maskedTextBox4.Location = new System.Drawing.Point(90, 105);
             this.maskedTextBox4.Mask = "###";
             this.maskedTextBox4.Name = "maskedTextBox4";
             this.maskedTextBox4.PromptChar = ' ';
-            this.maskedTextBox4.Size = new System.Drawing.Size(39, 20);
+            this.maskedTextBox4.Size = new System.Drawing.Size(30, 20);
             this.maskedTextBox4.TabIndex = 31;
             this.maskedTextBox4.Text = "20";
             this.maskedTextBox4.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
@@ -350,7 +357,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(580, 292);
+            this.label1.Location = new System.Drawing.Point(802, 357);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(0, 13);
             this.label1.TabIndex = 5;
@@ -358,21 +365,20 @@
             // label10
             // 
             this.label10.AutoSize = true;
-            this.label10.Location = new System.Drawing.Point(12, 573);
+            this.label10.Location = new System.Drawing.Point(9, 64);
             this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(51, 13);
+            this.label10.Size = new System.Drawing.Size(49, 13);
             this.label10.TabIndex = 33;
-            this.label10.Text = "Dilatation";
+            this.label10.Text = "dilatation";
             // 
             // trackBar5
             // 
             this.trackBar5.AutoSize = false;
-            this.trackBar5.Enabled = false;
             this.trackBar5.LargeChange = 10;
-            this.trackBar5.Location = new System.Drawing.Point(12, 589);
+            this.trackBar5.Location = new System.Drawing.Point(9, 80);
             this.trackBar5.Maximum = 40;
             this.trackBar5.Name = "trackBar5";
-            this.trackBar5.Size = new System.Drawing.Size(126, 20);
+            this.trackBar5.Size = new System.Drawing.Size(111, 20);
             this.trackBar5.TabIndex = 34;
             this.trackBar5.Tag = "";
             this.trackBar5.TickFrequency = 10;
@@ -381,11 +387,11 @@
             // 
             // maskedTextBox5
             // 
-            this.maskedTextBox5.Location = new System.Drawing.Point(102, 570);
+            this.maskedTextBox5.Location = new System.Drawing.Point(90, 57);
             this.maskedTextBox5.Mask = "##";
             this.maskedTextBox5.Name = "maskedTextBox5";
             this.maskedTextBox5.PromptChar = ' ';
-            this.maskedTextBox5.Size = new System.Drawing.Size(39, 20);
+            this.maskedTextBox5.Size = new System.Drawing.Size(30, 20);
             this.maskedTextBox5.TabIndex = 35;
             this.maskedTextBox5.Text = "10";
             this.maskedTextBox5.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
@@ -393,11 +399,11 @@
             // 
             // maskedTextBox6
             // 
-            this.maskedTextBox6.Location = new System.Drawing.Point(105, 620);
+            this.maskedTextBox6.Location = new System.Drawing.Point(90, 109);
             this.maskedTextBox6.Mask = "##";
             this.maskedTextBox6.Name = "maskedTextBox6";
             this.maskedTextBox6.PromptChar = ' ';
-            this.maskedTextBox6.Size = new System.Drawing.Size(39, 20);
+            this.maskedTextBox6.Size = new System.Drawing.Size(30, 20);
             this.maskedTextBox6.TabIndex = 38;
             this.maskedTextBox6.Text = "70";
             this.maskedTextBox6.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
@@ -406,12 +412,11 @@
             // trackBar6
             // 
             this.trackBar6.AutoSize = false;
-            this.trackBar6.Enabled = false;
             this.trackBar6.LargeChange = 10;
-            this.trackBar6.Location = new System.Drawing.Point(15, 639);
+            this.trackBar6.Location = new System.Drawing.Point(9, 128);
             this.trackBar6.Maximum = 99;
             this.trackBar6.Name = "trackBar6";
-            this.trackBar6.Size = new System.Drawing.Size(126, 20);
+            this.trackBar6.Size = new System.Drawing.Size(111, 20);
             this.trackBar6.TabIndex = 37;
             this.trackBar6.Tag = "";
             this.trackBar6.TickFrequency = 10;
@@ -421,36 +426,68 @@
             // label11
             // 
             this.label11.AutoSize = true;
-            this.label11.Location = new System.Drawing.Point(15, 623);
+            this.label11.Location = new System.Drawing.Point(9, 112);
             this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(88, 13);
+            this.label11.Size = new System.Drawing.Size(42, 13);
             this.label11.TabIndex = 36;
-            this.label11.Text = "Background ratio";
+            this.label11.Text = "bg ratio";
+            // 
+            // button5
+            // 
+            this.button5.Location = new System.Drawing.Point(9, 154);
+            this.button5.Name = "button5";
+            this.button5.Size = new System.Drawing.Size(111, 23);
+            this.button5.TabIndex = 39;
+            this.button5.Text = "apply parameters";
+            this.button5.UseVisualStyleBackColor = true;
+            this.button5.Click += new System.EventHandler(this.button5_Click);
+            // 
+            // groupBox1
+            // 
+            this.groupBox1.Controls.Add(this.trackBar1);
+            this.groupBox1.Controls.Add(this.label6);
+            this.groupBox1.Controls.Add(this.button5);
+            this.groupBox1.Controls.Add(this.maskedTextBox6);
+            this.groupBox1.Controls.Add(this.maskedTextBox1);
+            this.groupBox1.Controls.Add(this.trackBar6);
+            this.groupBox1.Controls.Add(this.trackBar5);
+            this.groupBox1.Controls.Add(this.label11);
+            this.groupBox1.Controls.Add(this.label10);
+            this.groupBox1.Controls.Add(this.maskedTextBox5);
+            this.groupBox1.Location = new System.Drawing.Point(12, 357);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Size = new System.Drawing.Size(126, 187);
+            this.groupBox1.TabIndex = 40;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "preprocessing";
+            // 
+            // groupBox2
+            // 
+            this.groupBox2.Controls.Add(this.label7);
+            this.groupBox2.Controls.Add(this.trackBar2);
+            this.groupBox2.Controls.Add(this.trackBar3);
+            this.groupBox2.Controls.Add(this.maskedTextBox4);
+            this.groupBox2.Controls.Add(this.label8);
+            this.groupBox2.Controls.Add(this.maskedTextBox3);
+            this.groupBox2.Controls.Add(this.trackBar4);
+            this.groupBox2.Controls.Add(this.maskedTextBox2);
+            this.groupBox2.Controls.Add(this.label9);
+            this.groupBox2.Location = new System.Drawing.Point(12, 550);
+            this.groupBox2.Name = "groupBox2";
+            this.groupBox2.Size = new System.Drawing.Size(126, 156);
+            this.groupBox2.TabIndex = 41;
+            this.groupBox2.TabStop = false;
+            this.groupBox2.Text = "segmentation";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1129, 714);
-            this.Controls.Add(this.maskedTextBox6);
-            this.Controls.Add(this.trackBar6);
-            this.Controls.Add(this.label11);
-            this.Controls.Add(this.maskedTextBox5);
-            this.Controls.Add(this.trackBar5);
-            this.Controls.Add(this.label10);
-            this.Controls.Add(this.maskedTextBox4);
-            this.Controls.Add(this.maskedTextBox3);
-            this.Controls.Add(this.maskedTextBox2);
-            this.Controls.Add(this.maskedTextBox1);
-            this.Controls.Add(this.label9);
-            this.Controls.Add(this.trackBar4);
-            this.Controls.Add(this.label8);
-            this.Controls.Add(this.trackBar3);
-            this.Controls.Add(this.label7);
-            this.Controls.Add(this.trackBar2);
-            this.Controls.Add(this.label6);
-            this.Controls.Add(this.trackBar1);
+            this.AutoScroll = true;
+            this.ClientSize = new System.Drawing.Size(1138, 714);
+            this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.label5);
+            this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
@@ -464,8 +501,8 @@
             this.Controls.Add(this.imageBox1);
             this.Controls.Add(this.button1);
             this.Name = "Form1";
+            this.Opacity = 0.95D;
             this.Text = "Shape Tracking";
-            this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.imageBox1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox2)).EndInit();
             this.panel1.ResumeLayout(false);
@@ -478,6 +515,10 @@
             ((System.ComponentModel.ISupportInitialize)(this.trackBar4)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBar5)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBar6)).EndInit();
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
+            this.groupBox2.ResumeLayout(false);
+            this.groupBox2.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -518,6 +559,9 @@
         private System.Windows.Forms.MaskedTextBox maskedTextBox6;
         private System.Windows.Forms.TrackBar trackBar6;
         private System.Windows.Forms.Label label11;
+        private System.Windows.Forms.Button button5;
+        private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.GroupBox groupBox2;
     }
 }
 
