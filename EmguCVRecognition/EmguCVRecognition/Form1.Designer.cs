@@ -501,7 +501,6 @@
             this.Controls.Add(this.imageBox1);
             this.Controls.Add(this.button1);
             this.Name = "Form1";
-            this.Opacity = 0.95D;
             this.Text = "Shape Tracking";
             ((System.ComponentModel.ISupportInitialize)(this.imageBox1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.imageBox2)).EndInit();
